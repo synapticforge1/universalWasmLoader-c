@@ -30,4 +30,4 @@ comprehensive audit across tested AND untested paths for: (1) workarounds / temp
 
 | File | What it holds |
 | --- | --- |
-| [overview.md](overview.md) | What this loader port is, its language/runtime, API surface, ABI/SPEC conformance status, tests, and release flow |
+| [overview.md](overview.md) | What this loader port is, where the repo lives (`synapticforge1` org since 2026-10-20), its language/runtime, API surface, ABI/SPEC conformance status, tests, and release flow |

@@ -17,6 +17,20 @@ its ecosystem.
   are always visible; the implementation is compiled into exactly one TU that does
   `#define UWL_IMPLEMENTATION` before including. Consumers link against the wasmtime C API library.
 
+## Repository location — moved to the `synapticforge1` org (recorded 2026-10-20)
+
+- **Canonical home:** `https://github.com/synapticforge1/universalWasmLoader-c` (an organization
+  under the owner's control). Formerly `https://github.com/jrmarcum/universalWasmLoader-c`; GitHub
+  redirects the old path, but a redirect is not a contract — new references use the org path.
+- **The JSR package scope is a separate namespace and did NOT move:** the reference loader is still
+  `@jrmarcum/universal-wasm-loader` on jsr.io; sibling repos (e.g. `wasmtk`) were not part of this move.
+- **References repointed 2026-10-20** as **1.1.0 port-version 2** (header unchanged, so no version
+  bump): port `homepage`, the portfile's raw-github header + LICENSE URLs (verified to resolve at
+  `v1.1.0` under the org and to match the existing sha512 pins), and `docs/vcpkg.md`. `versions/`
+  hand-updated (git-tree `f2df1575…`, baseline port-version 2). Local `origin` remote set to the org
+  URL. Consumers' `vcpkg-configuration.json` registry `repository` should use the org URL, with a
+  baseline at or after the `registry: … port-version 2` commit once it is pushed.
+
 ## Current state — IMPLEMENTED v1 (2026-06-17)
 
 The header-only loader is implemented and passes the full reference suite. Working tree:
