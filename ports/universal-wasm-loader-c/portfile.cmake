@@ -66,7 +66,7 @@ endif()
 file(INSTALL "${_wt_root}/include/" DESTINATION "${CURRENT_PACKAGES_DIR}/include")
 
 vcpkg_download_distfile(UWL_HEADER
-  URLS "https://raw.githubusercontent.com/jrmarcum/universalWasmLoader-c/v${UWL_VERSION}/universal_wasm_loader.h"
+  URLS "https://raw.githubusercontent.com/synapticforge1/universalWasmLoader-c/v${UWL_VERSION}/universal_wasm_loader.h"
   FILENAME "universal_wasm_loader-${UWL_VERSION}.h"
   SHA512 "${UWL_HEADER_SHA512}"
 )
@@ -129,7 +129,7 @@ configure_file(
 # must carry BOTH the loader's MIT license and wasmtime's
 # Apache-2.0 WITH LLVM-exception (the SDK ships its LICENSE at the archive root).
 vcpkg_download_distfile(UWL_LICENSE
-  URLS "https://raw.githubusercontent.com/jrmarcum/universalWasmLoader-c/v${UWL_VERSION}/LICENSE"
+  URLS "https://raw.githubusercontent.com/synapticforge1/universalWasmLoader-c/v${UWL_VERSION}/LICENSE"
   FILENAME "universal-wasm-loader-c-LICENSE-${UWL_VERSION}"
   SHA512 "${UWL_LICENSE_SHA512}"
 )

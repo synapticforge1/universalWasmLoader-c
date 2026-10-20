@@ -28,7 +28,7 @@ installs its headers/libs alongside the loader.
 ## 0. One-time publish prerequisite (maintainer)
 
 The portfile fetches the loader header and LICENSE from
-`raw.githubusercontent.com/jrmarcum/universalWasmLoader-c/v<version>/…`, so the
+`raw.githubusercontent.com/synapticforge1/universalWasmLoader-c/v<version>/…`, so the
 tag must exist on GitHub:
 
 ```sh
@@ -72,7 +72,7 @@ In your **consumer project**, add two files:
   "registries": [
     {
       "kind": "git",
-      "repository": "https://github.com/jrmarcum/universalWasmLoader-c",
+      "repository": "https://github.com/synapticforge1/universalWasmLoader-c",
       "baseline": "<commit sha of this repo's main after versions/ is committed>",
       "packages": ["universal-wasm-loader-c"]
     }
