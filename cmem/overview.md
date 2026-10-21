@@ -145,5 +145,8 @@ the `-rs`/`-js` ones (SPEC §7-#7).
 - **URL loading** (the JS/`-rs` `http(s)://` path) is not implemented — file paths only.
 - **Thread-safe pool** (blocking acquire) — the C pool is single-threaded; a future revision could
   add mutex/condvar gating behind a compile flag.
-- **vcpkg port** validated on `x64-mingw-dynamic` (2026-06-17); the other triplets (MSVC x64-windows,
-  linux, macos) are authored with real sha512 but not yet build-tested. CI not set up.
+- **vcpkg port** validated locally on `x64-mingw-dynamic` (2026-06-17). CI (`.github/workflows/vcpkg-release.yml`)
+  runs `validate` on every push/PR and real overlay-port installs on tags or manual dispatch. **Install
+  VALIDATED 2026-10-20** (dispatch run `39518063717`, 1.1.0 port-version 2, downloads from the
+  `synapticforge1` org URLs) on `x64-linux`, `x64-windows` (MSVC) and `arm64-osx`. Not yet
+  install-tested: `x64-windows-static`, `x64-mingw-static`, `arm64-linux`, `x64-osx`.
