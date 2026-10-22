@@ -1,0 +1,12 @@
+* text=auto eol=lf
+
+# Binaries: never converted, never diffed as text
+*.wasm binary
+*.exe binary
+*.dll binary
+*.a binary
+*.lib binary
+*.so binary
+*.dylib binary
+*.zip binary
+*.xz binary
