@@ -31,16 +31,20 @@ its ecosystem.
   URL. Consumers' `vcpkg-configuration.json` registry `repository` should use the org URL, with a
   baseline at or after the `registry: … port-version 2` commit once it is pushed.
 
-## Current state — IMPLEMENTED v1 (2026-06-17)
+## Current state — v1.1.0
 
-The header-only loader is implemented and passes the full reference suite. Working tree:
+The header-only loader is implemented and passes the full reference suite. Released tags: `v1.0.0`
+(`0c6b596`, 2026-06-17), `v1.1.0` (`55b6244`, 2026-06-24; adds the convenience call layer), vcpkg
+port-version 2 since 2026-10-20. Working tree:
 
 - `universal_wasm_loader.h` — the single-header library (public API + `UWL_IMPLEMENTATION` body).
 - `tests/spec_tests.c` — the SPEC §8 reference suite (29 assertions).
 - `tests/*.wasm` + `tests/*.wit` — the four reference fixtures (`math_50`, `booleans_50`,
-  `strings_50`, `imports_50`), copied verbatim from the `-rs` port (unmodified per §7-#7).
+  `strings_50`, `imports_50`), copied from the `-rs` port in 2026-06. **Stale since loader-js
+  restamped the reference set on 2026-10-12** — the `.wasm` bytes differ, the `.wit` match; refresh
+  deferred (see Known gaps).
 - `Makefile` — `make fetch` (download the wasmtime C API SDK into `vendor/`), `make test` (build +
-  run), `make clean`. Override `WASMTIME_VERSION` / `WASMTIME_PLATFORM` / `WASMTIME_LINK`.
+  run), `make clean`. Override `CC` / `WASMTIME_VERSION` / `WASMTIME_PLATFORM` / `WASMTIME_LINK`.
 - `scripts/fetch-wasmtime.ts` — **Bun** script (ported from `fetch-wasmtime.sh` 2026-10-22; see
   [working-rules.md](working-rules.md)) that downloads + extracts the wasmtime C API release artifact
   into `vendor/`. Windows platforms (`*-windows`, `*-mingw`) are `.zip`; Linux/macOS are `.tar.xz`.
@@ -113,8 +117,9 @@ pure-compute modules and partial-import modules still instantiate.
 ## Tests
 
 `make test` → builds `tests/spec_tests.c` and runs it: **29 passed, 0 failed.** Covers all four
-fixtures plus singleton, pool, and version-pin-rejected scenarios. The fixtures are byte-identical to
-the `-rs`/`-js` ones (SPEC §7-#7).
+fixtures plus singleton, pool, and version-pin-rejected scenarios. The fixtures matched the `-rs`
+copies when taken (2026-06); they do NOT match loader-js's current stamped set (measured 2026-10-22,
+sha256 of all four `.wasm` differ, `.wit` identical).
 
 ## Build / release flow
 
@@ -141,7 +146,9 @@ the `-rs`/`-js` ones (SPEC §7-#7).
   `LIBWASM_STATIC` builds so the `wasi_config_*` symbols resolve against `libwasmtime.a`. Without it,
   static MinGW links fail with `undefined reference to __imp_wasi_config_*`.
 - **Distribution — vcpkg (owner decision 2026-06-15), AUTHORED 2026-06-17:** the repo doubles as a
-  vcpkg **git registry**. `ports/universal-wasm-loader-c/` holds `vcpkg.json` (v1.0.0, MIT) +
+  vcpkg **git registry**. `ports/universal-wasm-loader-c/` holds `vcpkg.json` (1.1.0 port-version 2
+  as of 2026-10-20; license `MIT AND Apache-2.0 WITH LLVM-exception`, the second covering the bundled
+  wasmtime) +
   `portfile.cmake` + `universal-wasm-loader-c-config.cmake.in` + `usage`. The portfile downloads the
   loader header (raw github at tag `v<version>`, pinned by sha512) AND the matching **wasmtime C API
   artifact per triplet** (no `wasmtime` port exists in vcpkg — it's prebuilt GitHub releases), installs
@@ -155,10 +162,11 @@ the `-rs`/`-js` ones (SPEC §7-#7).
   (MIT detected); the consumer example built via `find_package` + `unofficial::universal-wasm-loader-c`
   and ran `add(3,4)=7`. Two portfile bugs fixed during validation: (1) `;`-separated commands on one
   line are a CMake parse error → split to separate lines; (2) dropped the unused `vcpkg-cmake-config`
-  host dep (config is hand-written via `configure_file`), which had forced an MSVC host build. **Real
-  (non-seeded) installs still require pushing + tagging `v1.0.0`** so the raw-github header/LICENSE
-  downloads resolve. `versions/` regenerated to the validated port tree via `vcpkg x-add-version`. See
-  the ecosystem publishing matrix in wasmtk `cmem/vision.md`.
+  host dep (config is hand-written via `configure_file`), which had forced an MSVC host build. Real
+  (non-seeded) installs need the `v<version>` tag on GitHub so the raw-github header/LICENSE
+  downloads resolve — `v1.0.0` and `v1.1.0` exist, and real installs were validated 2026-10-20 (see
+  Known gaps). `versions/` is regenerated to the port tree via `vcpkg x-add-version`. See the
+  ecosystem publishing matrix in wasmtk `cmem/vision.md`.
 
 ## Known gaps / not yet done
 

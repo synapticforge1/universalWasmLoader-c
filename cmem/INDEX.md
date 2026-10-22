@@ -10,14 +10,20 @@ single-topic.
   memory**," update the matching `cmem/` topic file with the latest decisions, found bugs, design
   changes, and current state — then add/refresh its one-line pointer in the table below. Convert
   relative dates to absolute; update existing entries rather than duplicating.
-- **`README` and `SPEC.md` are NOT project memory.** They are the public, user-facing docs. Keep
-  internal decision logs / bug post-mortems out of them — those live here in `cmem/`.
+- **`README.md` and `docs/` are NOT project memory.** They are the public, user-facing docs. Keep
+  internal decision logs / bug post-mortems out of them — those live here in `cmem/`. This repo has
+  no `SPEC.md`: the cross-language spec is loader-js's (`../universalWasmLoader-js/SPEC.md`).
+- **Layout** (workspace `../../../cmem/memory-conventions.md`): a small loader port, so
+  `overview.md` carries what-it-is, state, release flow, known gaps AND the open list (the status
+  narrative exists once, there); `working-rules.md` the repo-specific rules; `best-practices.md`
+  method rules. `CLAUDE.md` is a pointer only.
 
 ### The "update the project memory" trigger (binding on every agent)
 When the owner says **"update the project memory"** (or a synonym — "update memory", "record this"),
-do BOTH: (1) revise all relevant `cmem/` files and refresh the Files-table pointers (absolute dates;
-update, don't duplicate); and (2) sync the user-facing README / SPEC.md only where the change is
-user-relevant — never copy internal decision logs into them.
+do BOTH: (1) AUDIT all `cmem/` files for stale live claims — grep the old values, not just the files
+you touched — revise them and refresh the Files-table pointers (absolute dates; update, don't
+duplicate); and (2) sync the user-facing README / `docs/` only where the change is user-relevant —
+never copy internal decision logs into them.
 
 ### The "look for code issues" trigger (binding on every agent)
 When the owner says **"look for code issues"** (or "code audit" / "audit the code"), perform a
@@ -31,4 +37,5 @@ comprehensive audit across tested AND untested paths for: (1) workarounds / temp
 | File | What it holds |
 | --- | --- |
 | [overview.md](overview.md) | What this loader port is, where the repo lives (`synapticforge1` org since 2026-10-20), its language/runtime, API surface, ABI/SPEC conformance status, tests, release flow, known gaps (fixture refresh deferred to the next wasmtk release; CI runs no C tests), and the status of workspace letters for this repo (2026-10-22) |
+| [best-practices.md](best-practices.md) | METHOD rules: this repo's own (§ L) + the workspace's 28 ★ convergent rules, copied verbatim by script and stamped 2026-10-22 (letter H6) |
 | [working-rules.md](working-rules.md) | Repo-specific rules on top of the workspace floor (which is **Bun**/TypeScript since 2026-10-22): C compiler defaults to `zig cc` (2026-10-22); in-tree scripts (`scripts/fetch-wasmtime.ts`, ported from bash 2026-10-22) |
