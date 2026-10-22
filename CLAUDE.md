@@ -1,40 +1,34 @@
-> **⚠️ PORTABLE PROJECT MEMORY NOW LIVES IN `cmem/`** — start at [`cmem/INDEX.md`](cmem/INDEX.md).
+# CLAUDE.md — universalWasmLoader-c (pointer)
 
 > **At session start, read `../../cmem/handoffs.md` for letters addressed to this repo.** The workspace
 > session (`../../cmem/INDEX.md`) reviews across the sibling repos and reports there; nothing is ever
 > written into this repo from outside. (owner directive, 2026-09-20)
 
-> When saving new project memory, write it into the matching `cmem/` topic file (and refresh its
-> pointer in `cmem/INDEX.md`). The **"update the project memory"** and **"look for code issues"**
-> triggers are defined in `cmem/INDEX.md` and are binding. This `CLAUDE.md` remains as the auto-loaded
-> historical archive; `cmem/` is the source of truth.
+**All project memory lives in [`cmem/`](cmem/INDEX.md).** Start at `cmem/INDEX.md`; state and open
+gaps are in [`cmem/overview.md`](cmem/overview.md). This file is only the pointer (the pre-2026-10-22
+archive is `git show 411bb59:CLAUDE.md`).
 
-# universalWasmLoader-c
+## What this is
 
-Universal WebAssembly loader for C/C++/Zig/V.
+The C port of the Universal WASM Loader: a single STB-style header, `universal_wasm_loader.h`, on the
+wasmtime C API, for C, C++, Zig, V and Julia consumers. Conformant to the loader `SPEC.md` 3.0.0.
+Distributed through the repo's own vcpkg registry (`ports/`, `versions/`).
 
-Repository: `https://github.com/synapticforge1/universalWasmLoader-c` (moved from the `jrmarcum`
-account to the `synapticforge1` org; recorded 2026-10-20 — see `cmem/overview.md`).
+## Triggers (defined in `cmem/INDEX.md`, binding)
 
-## Project goal
+- **"update the project memory"** — revise the `cmem/` files; sync `README.md` only where
+  user-relevant.
+- **"look for code issues"** — the comprehensive audit; keep `make clean test` at 29/29.
 
-Provide a single, reusable C library (or set of headers) that can load and execute `.wasm` modules from code written in C, C++, Zig, or V — without requiring each language's ecosystem-specific WASM runtime boilerplate.
+## Three things that bite immediately
 
-## Repository state
+1. **Build:** `make fetch` (Bun runs `scripts/fetch-wasmtime.ts`), then `make clean test`. The default
+   compiler is `zig cc` (plus Zig's `libunwind`); a plain `make test` can pass on a stale binary.
+2. **Scripting is Bun/TypeScript**, no shell scripts, no heredocs; commit messages go through a file
+   (`git commit -F`). Rules: workspace floor + `cmem/working-rules.md`.
+3. **Nothing is pushed, tagged or published unless the owner says so.** The vcpkg port downloads
+   the header from the `v<version>` tag, so a tag IS a release; CI (`vcpkg-release.yml`) validates
+   the port but does not run the C tests.
 
-Early-stage project. As of the initial commit the repo contains only `README.md`, `.gitignore`, and `LICENSE`. No source tree exists yet.
-
-## Toolchain & build
-
-- Target languages / consumers: C, C++, Zig, V
-- Compiled output types: static library (`.a`/`.lib`), shared library (`.so`/`.dll`/`.dylib`), or header-only — TBD
-- `.gitignore` covers standard C/C++ artefacts: object files, libraries, executables, debug files, and kernel-module build artefacts
-
-## Conventions
-
-- No conventions established yet — update this file as the project grows.
-
-## All project context lives here
-
-All Claude Code project context, conventions, and decisions are kept in this file.
-No machine-local memory is needed.
+**Current state:** v1.1.0 (vcpkg port-version 2), 29/29. GitHub:
+`synapticforge1/universalWasmLoader-c`.
