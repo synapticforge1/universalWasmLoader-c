@@ -7,7 +7,12 @@ WASMTIME_VERSION  ?= 45.0.2
 WASMTIME_PLATFORM ?= x86_64-mingw
 WASMTIME_SDK      ?= vendor/wasmtime-v$(WASMTIME_VERSION)-$(WASMTIME_PLATFORM)-c-api
 
-CC      ?= cc
+# Default compiler is `zig cc`. GNU make predefines CC=cc, so `?=` would never
+# apply; override only when CC still has make's built-in value. Pass CC=gcc
+# (or anything else) on the command line or in the environment to change it.
+ifeq ($(origin CC),default)
+  CC = zig cc
+endif
 CFLAGS  ?= -std=c11 -O2 -Wall -Wextra
 INCLUDE  = -I$(WASMTIME_SDK)/include
 LIBDIR   = -L$(WASMTIME_SDK)/lib
@@ -22,6 +27,13 @@ else
   UNAME_S := $(shell uname -s)
   SYSLIBS ?= -lpthread -lm -ldl
   EXE      =
+endif
+
+# wasmtime's static lib is Rust std built against libgcc's unwinder (_Unwind_*,
+# _GCC_specific_handler). gcc links that implicitly; zig cc does not, so link
+# zig's bundled LLVM libunwind, which provides the same symbols.
+ifneq ($(findstring zig,$(CC)),)
+  SYSLIBS += -lunwind
 endif
 
 # Static link by default (no DLL on PATH needed). Set WASMTIME_LINK=shared to

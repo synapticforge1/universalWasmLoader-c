@@ -109,7 +109,9 @@ uwl_pool_free(p);
 The loader needs the wasmtime C API SDK (headers + library). The Makefile fetches it into `vendor/`
 (gitignored) with `scripts/fetch-wasmtime.ts`, which requires [Bun](https://bun.sh) plus `unzip` or
 `tar` (Windows SDKs are `.zip`; Linux/macOS SDKs are `.tar.xz`, extracted with `tar`). Building needs
-a C compiler and `make`; if your system has no `cc`, pass `CC=gcc` (or `CC=clang`).
+`make` and, by default, [Zig](https://ziglang.org) (`zig cc`, linked with Zig's bundled `libunwind`,
+which wasmtime's static library needs). To use another compiler, pass it explicitly, e.g.
+`make CC=gcc test`.
 
 ```sh
 make fetch        # download the wasmtime C API SDK (override WASMTIME_VERSION / WASMTIME_PLATFORM)

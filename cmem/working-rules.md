@@ -19,6 +19,11 @@ Deno is going away; this repo's scripting moves to **Bun**. This overrides works
 - **External tools a script spawns run with a relative path and `cwd`**, never an absolute Windows
   path: GNU tar reads `D:\…` as a remote `host:path`.
 
+## C compiler: `zig cc` (owner, 2026-10-22)
+
+The Makefile's default `CC` is `zig cc` (with Zig's `libunwind`); see
+[overview.md](overview.md) § "Build / release flow". Other compilers stay supported via `CC=…`.
+
 ## Not yet propagated (2026-10-22)
 
 The Bun rule is local to this repo. The workspace floor and the other repos still say Deno; changing

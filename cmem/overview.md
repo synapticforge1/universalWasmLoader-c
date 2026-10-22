@@ -51,6 +51,7 @@ The header-only loader is implemented and passes the full reference suite. Worki
   fetched on demand, not committed.
 
 Build environment used for v1: MinGW-w64 gcc + wasmtime C API **v45.0.2** `x86_64-mingw`, static link.
+Default compiler since 2026-10-22: **`zig cc`** (see Build / release flow).
 
 ## Public API surface (implemented)
 
@@ -117,12 +118,21 @@ the `-rs`/`-js` ones (SPEC §7-#7).
 
 ## Build / release flow
 
-- **Local:** `make fetch` then `make test` (needs **Bun**, `unzip` or `tar`, a C compiler, `make`).
-  **This machine has no `cc`** (only scoop `mingw-winlibs` gcc), and GNU make's built-in `CC=cc`
-  default means the Makefile's `CC ?= cc` never falls back — run `make CC=gcc clean test`. A plain
-  `make test` can report 29/29 from a stale `tests/spec_tests.exe` without compiling anything; use
-  `clean test` when the result is meant as evidence. Re-verified 2026-10-22: fresh `make fetch` (Bun)
-  + `make CC=gcc clean test` → 29/29.
+- **Local:** `make fetch` then `make test` (needs **Bun**, `unzip` or `tar`, **Zig**, `make`).
+- **Default compiler is `zig cc` (owner, 2026-10-22).** GNU make predefines `CC=cc`, so `CC ?= …`
+  never applies; the Makefile sets `CC = zig cc` only when `$(origin CC)` is `default`, so
+  `make CC=gcc …` still overrides. (The old `cc` default never worked on this machine: there is no
+  `cc`, only scoop `mingw-winlibs` gcc.)
+- **`zig cc` needs `-lunwind`.** `libwasmtime.a` contains Rust std built against libgcc's unwinder
+  (`_Unwind_*`, and `_GCC_specific_handler` on mingw). gcc links that implicitly; zig cc does not, so
+  the link fails with ~9 undefined `_Unwind_*` symbols. The Makefile appends `-lunwind` (Zig's bundled
+  LLVM libunwind, which provides them) to `SYSLIBS` whenever `CC` contains `zig`. Needed on Linux too
+  (verified 2026-10-22 by cross-linking `-target x86_64-linux-gnu` against the `x86_64-linux` SDK:
+  fails without, links with). macOS not checked.
+- **A plain `make test` can report 29/29 from a stale `tests/spec_tests.exe`** without compiling
+  anything; use `make clean test` when the result is meant as evidence. Verified 2026-10-22 (zig
+  0.16.0, wasmtime 45.0.2 `x86_64-mingw`, static): `make clean test` (zig cc) → 29/29, and
+  `make CC=gcc clean test` → 29/29.
 - **Toolchain note (MinGW static link):** `wasi.h` decorates every `_WIN32` symbol
   `__declspec(dllimport)` unless `WASI_API_EXTERN` is pre-defined (unlike `wasm.h`, which already
   exempts MinGW). The header pre-defines `WASI_API_EXTERN` to plain `extern` for `__MINGW32__` /

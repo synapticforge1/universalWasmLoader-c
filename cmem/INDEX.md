@@ -24,11 +24,11 @@ When the owner says **"look for code issues"** (or "code audit" / "audit the cod
 comprehensive audit across tested AND untested paths for: (1) workarounds / temporary hacks;
 (2) dead code; (3) bugs (wrong ABI marshalling, off-by-one pointer/length math, endianness, missing
 `cabi_post` calls); and (4) silent fall-throughs (returning a default instead of erroring). Report
-`file:line` + severity, fix the safe ones, and keep the test suite green (`make test` → 29/29).
+`file:line` + severity, fix the safe ones, and keep the test suite green (`make clean test` → 29/29; default compiler is `zig cc`).
 
 ## Files
 
 | File | What it holds |
 | --- | --- |
 | [overview.md](overview.md) | What this loader port is, where the repo lives (`synapticforge1` org since 2026-10-20), its language/runtime, API surface, ABI/SPEC conformance status, tests, and release flow |
-| [working-rules.md](working-rules.md) | Repo-local overrides of the workspace rules: scripting is **Bun**/TypeScript, not Deno (2026-10-22); in-tree scripts (`scripts/fetch-wasmtime.ts`, ported from bash 2026-10-22) |
+| [working-rules.md](working-rules.md) | Repo-local overrides of the workspace rules: scripting is **Bun**/TypeScript, not Deno (2026-10-22); C compiler defaults to `zig cc` (2026-10-22); in-tree scripts (`scripts/fetch-wasmtime.ts`, ported from bash 2026-10-22) |
