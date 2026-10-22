@@ -30,5 +30,5 @@ comprehensive audit across tested AND untested paths for: (1) workarounds / temp
 
 | File | What it holds |
 | --- | --- |
-| [overview.md](overview.md) | What this loader port is, where the repo lives (`synapticforge1` org since 2026-10-20), its language/runtime, API surface, ABI/SPEC conformance status, tests, and release flow |
+| [overview.md](overview.md) | What this loader port is, where the repo lives (`synapticforge1` org since 2026-10-20), its language/runtime, API surface, ABI/SPEC conformance status, tests, release flow, known gaps (fixture refresh deferred to the next wasmtk release; CI runs no C tests), and the status of workspace letters for this repo (2026-10-22) |
 | [working-rules.md](working-rules.md) | Repo-specific rules on top of the workspace floor (which is **Bun**/TypeScript since 2026-10-22): C compiler defaults to `zig cc` (2026-10-22); in-tree scripts (`scripts/fetch-wasmtime.ts`, ported from bash 2026-10-22) |

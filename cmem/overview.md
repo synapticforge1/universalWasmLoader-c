@@ -183,3 +183,21 @@ the `-rs`/`-js` ones (SPEC §7-#7).
   VALIDATED 2026-10-20** (dispatch run `39518063717`, 1.1.0 port-version 2, downloads from the
   `synapticforge1` org URLs) on `x64-linux`, `x64-windows` (MSVC) and `arm64-osx`. Not yet
   install-tested: `x64-windows-static`, `x64-mingw-static`, `arm64-linux`, `x64-osx`.
+- **CI never builds or runs the C suite.** `vcpkg-release.yml` is the only workflow; on a push it
+  runs `validate` (port files) and skips `install` (run `39800339374` on `0271ef3`, 2026-10-22:
+  validate ✅, install skipped). So `make fetch` (Bun), the `zig cc` build and `spec_tests.c` are
+  verified only locally (x86_64-mingw). A native macOS build/run has never happened (link-only
+  cross-checks, see Build / release flow). Fix: a `make fetch` + `make clean test` job on
+  Linux/macOS/Windows.
+- **Suite coverage vs -js:** `wasi_io_50` (WASI fd_write) and `init_check` (`_initialize`) are in
+  the -js reference set but not exercised by `spec_tests.c`; add them with the fixture refresh above.
+
+## Workspace letters — status for this repo (2026-10-22)
+
+From `../../cmem/handoffs.md`; the workspace sweep reads this section.
+
+- **H15 (Bun scripting)** — done: `ebcced1` (bash → Bun fetch script), `0271ef3` (local rules
+  trimmed to the workspace floor).
+- **L2 (cut tracked `CLAUDE.md` to a pointer)** — done: `6ca86e9` (archive: `git show 411bb59:CLAUDE.md`).
+- **H7 (reference fixtures)** — deferred to the next wasmtk release (see Known gaps).
+- **H6 (`best-practices.md` ★ copy, memory layout, SemVer compatibility gate)** — open, not started.
