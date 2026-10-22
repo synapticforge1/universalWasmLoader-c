@@ -146,6 +146,12 @@ HEAD` *after* committing the `versions/` update.
 
 ## Troubleshooting
 
+- **Registry baseline no longer found** — this repo's git history was rewritten
+  on 2026-10-22 (commit metadata only; every release's files are unchanged), so
+  every commit hash changed. A `baseline` taken from this repo before that date
+  stops resolving once GitHub drops the old commits. Replace it with a current
+  commit of `main` (`git ls-remote https://github.com/synapticforge1/universalWasmLoader-c refs/heads/main`);
+  the port versions, header and sha512 pins it resolves to are the same.
 - **SHA512 mismatch on the header/LICENSE download** — the `v<version>` tag
   doesn't exist yet or points at different bytes. Complete §0.
 - **`undefined reference to __imp_wasi_config_*` (MinGW)** — only affects the

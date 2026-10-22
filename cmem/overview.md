@@ -194,8 +194,9 @@ sha256 of all four `.wasm` differ, `.wit` identical).
   `synapticforge1` org URLs) on `x64-linux`, `x64-windows` (MSVC) and `arm64-osx`. Not yet
   install-tested: `x64-windows-static`, `x64-mingw-static`, `arm64-linux`, `x64-osx`.
 - **CI never builds or runs the C suite.** `vcpkg-release.yml` is the only workflow; on a push it
-  runs `validate` (port files) and skips `install` (run `39800339374` on `f1e14d1`, 2026-10-22:
-  validate ✅, install skipped). So `make fetch` (Bun), the `zig cc` build and `spec_tests.c` are
+  runs `validate` (port files, plus the gate's surface check and self-test since `0494969`) and
+  skips `install`. Latest: run `39823105880` on `77cf808`, 2026-10-22, the first after the H19
+  rewrite — validate ✅, `compat`/`install` skipped. So `make fetch` (Bun), the `zig cc` build and `spec_tests.c` are
   verified only locally (x86_64-mingw). A native macOS build/run has never happened (link-only
   cross-checks, see Build / release flow). Fix: a `make fetch` + `make clean test` job on
   Linux/macOS/Windows.
@@ -222,9 +223,12 @@ From `../../cmem/handoffs.md`; the workspace sweep reads this section.
   personal address (all 34 commits + the `v1.0.0` tagger) → GitHub noreply, the `.vscode` path
   removed from every commit (34 → 33), tagged trees byte-identical, force-pushed with leases.
   **Every hash changed** — old → new map for the workspace's citations and for vcpkg registry
-  `baseline` pins: [history-purge.md](history-purge.md). `main` = `bc3666f`.
+  `baseline` pins: [history-purge.md](history-purge.md). The rewritten head was `bc3666f`; the
+  record landed in `77cf808` (CI green, run `39823105880`). ⚠️ CI runs from before the rewrite show
+  the OLD hashes on GitHub; translate them with the map.
 - **For the workspace sweep — drift W7 / layout-and-packaging P5 (org Actions policy):** MEASURED
-  2026-10-22: run `39804596951` on `0494969` (push) executed `oven-sh/setup-bun@v2` in this repo's
+  2026-10-22: run `39804596951` on `0494969` (GitHub shows its pre-H19 hash `0f9b6e3`) executed
+  `oven-sh/setup-bun@v2` in this repo's
   `validate` job and succeeded — the `synapticforge1` org permits third-party `uses:` for this repo.
   (`mlugg/setup-zig@v2` is in the tags-only `compat` job, not yet run.)
 - **H6** — done 2026-10-22: ★ copy + § L in `best-practices.md` and the memory-layout audit

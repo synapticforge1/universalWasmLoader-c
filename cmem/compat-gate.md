@@ -70,8 +70,9 @@ reads only the leading comment.
 
 - The CI `compat` job (tags only) has never run: it is the first native Linux `zig cc` build and
   run of the suite (Zig 0.16.0 via `mlugg/setup-zig@v2`, Bun 1.4.3 via `oven-sh/setup-bun@v2`).
-  The `validate` additions (surface `--check`, self-test) ran green on Linux in run `39804596951`
-  (`0494969`, 2026-10-22).
+  The `validate` additions (surface `--check`, self-test) ran green on Linux first in run
+  `39804596951` (`0494969`; GitHub shows the pre-H19 hash `0f9b6e3`), and again in run
+  `39823105880` on `77cf808` after the history rewrite (2026-10-22).
 
 ## Traps met building it
 

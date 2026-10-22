@@ -14,6 +14,15 @@ the next free number; numbers are never reused.
   `x86_64-linux` and the macOS targets from v1 on, but always requested `.zip`; those targets ship
   `.tar.xz`, so every one of them 404'd until the Bun port tried it (2026-10-22, `5fad372`).
   [universalWasmLoader-c; cf. -js L2 "a runtime claim nobody runs is a guess"]
+- **L3 A negative check must tell "absent" from "different".** `echo "$g" | grep -q noreply || echo
+  "NOT noreply"` reported the global `user.email` as a personal address when it was UNSET (the
+  address lived in the system config), and the H19 filter then failed twice on an empty value
+  (2026-10-22, [history-purge.md](history-purge.md)). Test for empty first; print the scope.
+  [universalWasmLoader-c]
+- **L4 A watcher must be shown a success before it is trusted to wait for one.** A CI poll matched
+  the run id within three lines of `head_sha` in GitHub's JSON, where it never is, so a passed run
+  read as "not completed after ~40 min" and looked like a stall (2026-10-22). Run the matcher once
+  against an already-completed run before backgrounding it. [universalWasmLoader-c]
 
 ## ★ The workspace's convergent rules — a COPY, stamped 2026-10-22 (workspace letter H6)
 
