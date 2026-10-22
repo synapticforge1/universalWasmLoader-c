@@ -31,3 +31,4 @@ comprehensive audit across tested AND untested paths for: (1) workarounds / temp
 | File | What it holds |
 | --- | --- |
 | [overview.md](overview.md) | What this loader port is, where the repo lives (`synapticforge1` org since 2026-10-20), its language/runtime, API surface, ABI/SPEC conformance status, tests, and release flow |
+| [working-rules.md](working-rules.md) | Repo-local overrides of the workspace rules: scripting is **Bun**/TypeScript, not Deno (2026-10-22); in-tree scripts (`scripts/fetch-wasmtime.ts`, ported from bash 2026-10-22) |

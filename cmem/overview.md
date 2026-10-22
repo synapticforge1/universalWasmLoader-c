@@ -41,7 +41,12 @@ The header-only loader is implemented and passes the full reference suite. Worki
   `strings_50`, `imports_50`), copied verbatim from the `-rs` port (unmodified per §7-#7).
 - `Makefile` — `make fetch` (download the wasmtime C API SDK into `vendor/`), `make test` (build +
   run), `make clean`. Override `WASMTIME_VERSION` / `WASMTIME_PLATFORM` / `WASMTIME_LINK`.
-- `scripts/fetch-wasmtime.sh` — fetches + unzips the wasmtime C API release artifact into `vendor/`.
+- `scripts/fetch-wasmtime.ts` — **Bun** script (ported from `fetch-wasmtime.sh` 2026-10-22; see
+  [working-rules.md](working-rules.md)) that downloads + extracts the wasmtime C API release artifact
+  into `vendor/`. Windows platforms (`*-windows`, `*-mingw`) are `.zip`; Linux/macOS are `.tar.xz`.
+  The old bash script always requested `.zip`, so its documented `x86_64-linux` / `*-macos` platforms
+  404'd; the port fixes that (verified 2026-10-22: `x86_64-windows` zip, `x86_64-linux` tar.xz, and a
+  bogus platform failing fast with a 404 instead of retrying).
 - `vendor/` — the wasmtime C API SDK (headers + `libwasmtime.a` / import lib). **gitignored**;
   fetched on demand, not committed.
 
@@ -112,7 +117,12 @@ the `-rs`/`-js` ones (SPEC §7-#7).
 
 ## Build / release flow
 
-- **Local:** `make fetch` then `make test` (needs `curl`, `unzip`, a C compiler, `make`).
+- **Local:** `make fetch` then `make test` (needs **Bun**, `unzip` or `tar`, a C compiler, `make`).
+  **This machine has no `cc`** (only scoop `mingw-winlibs` gcc), and GNU make's built-in `CC=cc`
+  default means the Makefile's `CC ?= cc` never falls back — run `make CC=gcc clean test`. A plain
+  `make test` can report 29/29 from a stale `tests/spec_tests.exe` without compiling anything; use
+  `clean test` when the result is meant as evidence. Re-verified 2026-10-22: fresh `make fetch` (Bun)
+  + `make CC=gcc clean test` → 29/29.
 - **Toolchain note (MinGW static link):** `wasi.h` decorates every `_WIN32` symbol
   `__declspec(dllimport)` unless `WASI_API_EXTERN` is pre-defined (unlike `wasm.h`, which already
   exempts MinGW). The header pre-defines `WASI_API_EXTERN` to plain `extern` for `__MINGW32__` /

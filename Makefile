@@ -1,6 +1,6 @@
 # universalWasmLoader-c — build & test
 #
-# Requires the wasmtime C API SDK in vendor/ (fetch with `make fetch`).
+# Requires the wasmtime C API SDK in vendor/ (fetch with `make fetch`, which needs Bun).
 # Override WASMTIME_VERSION / WASMTIME_PLATFORM to match your toolchain.
 
 WASMTIME_VERSION  ?= 45.0.2
@@ -40,7 +40,7 @@ TEST_BIN = tests/spec_tests$(EXE)
 all: test
 
 fetch:
-	bash scripts/fetch-wasmtime.sh $(WASMTIME_VERSION) $(WASMTIME_PLATFORM)
+	bun run scripts/fetch-wasmtime.ts $(WASMTIME_VERSION) $(WASMTIME_PLATFORM)
 
 $(TEST_BIN): tests/spec_tests.c universal_wasm_loader.h | check-sdk
 	$(CC) $(CFLAGS) $(INCLUDE) tests/spec_tests.c -o $(TEST_BIN) \
