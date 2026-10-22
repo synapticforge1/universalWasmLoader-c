@@ -40,5 +40,6 @@ comprehensive audit across tested AND untested paths for: (1) workarounds / temp
 | --- | --- |
 | [overview.md](overview.md) | What this loader port is, where the repo lives (`synapticforge1` org since 2026-10-20), its language/runtime, API surface, ABI/SPEC conformance status, tests, release flow, known gaps (fixture refresh deferred to the next wasmtk release; CI runs no C tests), and the status of workspace letters for this repo (2026-10-22) |
 | [compat-gate.md](compat-gate.md) | The SemVer compatibility gate (letter H6, 2026-10-22): surface snapshot, floor, previous-tag tests, `make bump`, CI, the end-to-end inversion table |
+| [history-purge.md](history-purge.md) | The 2026-10-22 history rewrite (letter H19): what was purged, how it was verified, what is out of our control, and the full old → new commit hash map |
 | [best-practices.md](best-practices.md) | METHOD rules: this repo's own (§ L) + the workspace's 28 ★ convergent rules, copied verbatim by script and stamped 2026-10-22 (letter H6) |
 | [working-rules.md](working-rules.md) | Repo-specific rules on top of the workspace floor (which is **Bun**/TypeScript since 2026-10-22): C compiler defaults to `zig cc` (2026-10-22); in-tree scripts (`scripts/fetch-wasmtime.ts`, ported from bash 2026-10-22) |

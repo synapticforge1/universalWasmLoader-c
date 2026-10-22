@@ -6,7 +6,7 @@
 
 **All project memory lives in [`cmem/`](cmem/INDEX.md).** Start at `cmem/INDEX.md`; state and open
 gaps are in [`cmem/overview.md`](cmem/overview.md). This file is only the pointer (the pre-2026-10-22
-archive is `git show 411bb59:CLAUDE.md`).
+archive is `git show 1057d89:CLAUDE.md`).
 
 ## What this is
 

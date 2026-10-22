@@ -12,7 +12,7 @@ the next free number; numbers are never reused.
   when the result is evidence. [universalWasmLoader-c]
 - **L2 A documented platform nobody fetches is a guess.** `fetch-wasmtime.sh` listed
   `x86_64-linux` and the macOS targets from v1 on, but always requested `.zip`; those targets ship
-  `.tar.xz`, so every one of them 404'd until the Bun port tried it (2026-10-22, `ebcced1`).
+  `.tar.xz`, so every one of them 404'd until the Bun port tried it (2026-10-22, `5fad372`).
   [universalWasmLoader-c; cf. -js L2 "a runtime claim nobody runs is a guess"]
 
 ## ★ The workspace's convergent rules — a COPY, stamped 2026-10-22 (workspace letter H6)

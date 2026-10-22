@@ -34,7 +34,7 @@ its ecosystem.
 ## Current state — v1.1.0
 
 The header-only loader is implemented and passes the full reference suite. Released tags: `v1.0.0`
-(`0c6b596`, 2026-06-17), `v1.1.0` (`55b6244`, 2026-06-24; adds the convenience call layer), vcpkg
+(`4da2c0b`, 2026-06-17), `v1.1.0` (`3aea7bd`, 2026-06-24; adds the convenience call layer), vcpkg
 port-version 2 since 2026-10-20. Working tree:
 
 - `universal_wasm_loader.h` — the single-header library (public API + `UWL_IMPLEMENTATION` body).
@@ -194,7 +194,7 @@ sha256 of all four `.wasm` differ, `.wit` identical).
   `synapticforge1` org URLs) on `x64-linux`, `x64-windows` (MSVC) and `arm64-osx`. Not yet
   install-tested: `x64-windows-static`, `x64-mingw-static`, `arm64-linux`, `x64-osx`.
 - **CI never builds or runs the C suite.** `vcpkg-release.yml` is the only workflow; on a push it
-  runs `validate` (port files) and skips `install` (run `39800339374` on `0271ef3`, 2026-10-22:
+  runs `validate` (port files) and skips `install` (run `39800339374` on `f1e14d1`, 2026-10-22:
   validate ✅, install skipped). So `make fetch` (Bun), the `zig cc` build and `spec_tests.c` are
   verified only locally (x86_64-mingw). A native macOS build/run has never happened (link-only
   cross-checks, see Build / release flow). Fix: a `make fetch` + `make clean test` job on
@@ -210,16 +210,23 @@ sha256 of all four `.wasm` differ, `.wit` identical).
 
 From `../../cmem/handoffs.md`; the workspace sweep reads this section.
 
-- **H15 (Bun scripting)** — done: `ebcced1` (bash → Bun fetch script), `0271ef3` (local rules
+- **H15 (Bun scripting)** — done: `5fad372` (bash → Bun fetch script), `f1e14d1` (local rules
   trimmed to the workspace floor).
-- **L2 (cut tracked `CLAUDE.md` to a pointer)** — done: `6ca86e9` (archive: `git show 411bb59:CLAUDE.md`).
+- **L2 (cut tracked `CLAUDE.md` to a pointer)** — done: `e189da8` (archive: `git show 1057d89:CLAUDE.md`).
 - **H7 (reference fixtures)** — deferred to the next wasmtk release (see Known gaps).
 - **H16 (`.git` growth)** — applied 2026-10-22 with the owner's OK (gc, fsck clean,
   `maintenance.strategy gc`, 1 pack); details in the gitignored `local/environment.md`.
+- **H18 (personal drive paths)** — not addressed here, but the scan pattern found the old
+  `.vscode/settings.json` path; fixed in `99a4bbb`, untracked in `bc3666f`.
+- **H19 (purge personal information from history)** — done 2026-10-22 with the owner's go: the
+  personal address (all 34 commits + the `v1.0.0` tagger) → GitHub noreply, the `.vscode` path
+  removed from every commit (34 → 33), tagged trees byte-identical, force-pushed with leases.
+  **Every hash changed** — old → new map for the workspace's citations and for vcpkg registry
+  `baseline` pins: [history-purge.md](history-purge.md). `main` = `bc3666f`.
 - **For the workspace sweep — drift W7 / layout-and-packaging P5 (org Actions policy):** MEASURED
-  2026-10-22: run `39804596951` on `0f9b6e3` (push) executed `oven-sh/setup-bun@v2` in this repo's
+  2026-10-22: run `39804596951` on `0494969` (push) executed `oven-sh/setup-bun@v2` in this repo's
   `validate` job and succeeded — the `synapticforge1` org permits third-party `uses:` for this repo.
   (`mlugg/setup-zig@v2` is in the tags-only `compat` job, not yet run.)
 - **H6** — done 2026-10-22: ★ copy + § L in `best-practices.md` and the memory-layout audit
-  (`7b7be45`); the SemVer compatibility gate ([compat-gate.md](compat-gate.md)). Only the CI
+  (`e80d838`); the SemVer compatibility gate ([compat-gate.md](compat-gate.md)). Only the CI
   `compat` job is unexercised until the next tag.
