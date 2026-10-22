@@ -113,7 +113,7 @@ export function previousTests(tag: string, keep = false): TestResult {
   try {
     const tar = Bun.spawnSync(["git", "archive", "--format=tar", "-o", ".compat/tests.tar", tag, "tests"], { cwd: ROOT, stderr: "pipe" });
     if (tar.exitCode !== 0) throw new Error(`git archive ${tag} tests failed: ${tar.stderr.toString().trim()}`);
-    // Relative path + cwd: GNU tar reads an absolute `D:\...` as a remote host:path.
+    // Relative path + cwd: GNU tar reads an absolute `<drive>:\...` as a remote host:path.
     const x = Bun.spawnSync(["tar", "-xf", "tests.tar"], { cwd: dir, stderr: "pipe" });
     if (x.exitCode !== 0) throw new Error(`tar -xf failed: ${x.stderr.toString().trim()}`);
     copyFileSync(join(ROOT, HEADER), join(dir, HEADER));

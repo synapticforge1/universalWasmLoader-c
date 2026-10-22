@@ -66,3 +66,6 @@ CMakeFiles/
 
 # Compatibility gate scratch (scripts/compat.ts)
 .compat/
+
+# Private, machine-local memory (workspace rule: no personal information committed)
+cmem/local/

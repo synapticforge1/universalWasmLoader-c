@@ -16,7 +16,9 @@ single-topic.
 - **Layout** (workspace `../../../cmem/memory-conventions.md`): a small loader port, so
   `overview.md` carries what-it-is, state, release flow, known gaps AND the open list (the status
   narrative exists once, there); `working-rules.md` the repo-specific rules; `best-practices.md`
-  method rules; `compat-gate.md` the release gate. `CLAUDE.md` is a pointer only.
+  method rules; `compat-gate.md` the release gate. `CLAUDE.md` is a pointer only. **`local/` is
+  gitignored** (machine facts, anything private; absent in a clone) — nothing private in a
+  committed file.
 
 ### The "update the project memory" trigger (binding on every agent)
 When the owner says **"update the project memory"** (or a synonym — "update memory", "record this"),

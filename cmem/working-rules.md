@@ -1,9 +1,13 @@
 # working-rules.md — repo-local rules for universalWasmLoader-c
 
 The workspace floor ([`../../../cmem/working-rules.md`](../../../cmem/working-rules.md)) applies here
-in full: scripting is **Bun/TypeScript** (workspace Tooling rule 1, 🔒 owner 2026-10-22, "Deno is
-going away"), no Python, no shell scripts, no heredocs. This file holds only what is specific to
-this repo. **A repo's own rules govern inside that repo.**
+in full. Scripting (workspace Tooling rule 1, 🔒 owner 2026-10-22, "Deno is going away", clarified
+three times that day): a COMMITTED script kept for repeated use is written in the repo language's
+scripting mechanism, and C has none (a mechanism that must build an executable would not count
+anyway), so **committed scripts here are TypeScript run by Bun**. A one-time scratch probe deleted
+after use may be shell, Bun or anything that fits — still written with `Write`, never a heredoc.
+No host Python, no committed shell scripts. This file holds only what is specific to this repo.
+**A repo's own rules govern inside that repo.**
 
 ## Scripts
 
@@ -16,7 +20,10 @@ this repo. **A repo's own rules govern inside that repo.**
 - **Releases go through `make bump`**, never a hand edit of the version line or the sha512 pins; a
   surface change is re-baselined (`make surface`) in its own commit before the bump.
 - **External tools a script spawns run with a relative path and `cwd`**, never an absolute Windows
-  path: GNU tar reads `D:\…` as a remote `host:path`.
+  path: GNU tar reads `<drive>:\…` as a remote `host:path`.
+- **Machine facts and anything private go in `cmem/local/`** (gitignored, verified with
+  `git check-ignore -v` 2026-10-22), never in a committed file (workspace § Records, 🔒 owner
+  2026-10-22). Scan the diff before committing memory.
 
 ## C compiler: `zig cc` (owner, 2026-10-22)
 

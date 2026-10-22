@@ -126,8 +126,8 @@ sha256 of all four `.wasm` differ, `.wit` identical).
 - **Local:** `make fetch` then `make test` (needs **Bun**, `unzip` or `tar`, **Zig**, `make`).
 - **Default compiler is `zig cc` (owner, 2026-10-22).** GNU make predefines `CC=cc`, so `CC ?= …`
   never applies; the Makefile sets `CC = zig cc` only when `$(origin CC)` is `default`, so
-  `make CC=gcc …` still overrides. (The old `cc` default never worked on this machine: there is no
-  `cc`, only scoop `mingw-winlibs` gcc.)
+  `make CC=gcc …` still overrides. (The old `cc` default could fail outright on a host with no
+  `cc`; machine specifics are in the gitignored `local/environment.md`.)
 - **`zig cc` needs `-lunwind`.** `libwasmtime.a` contains Rust std built against libgcc's unwinder
   (`_Unwind_*`, and `_GCC_specific_handler` on mingw). gcc links that implicitly; zig cc does not, so
   the link fails with ~9 undefined `_Unwind_*` symbols. The Makefile appends `-lunwind` (Zig's bundled
@@ -199,6 +199,10 @@ sha256 of all four `.wasm` differ, `.wit` identical).
   verified only locally (x86_64-mingw). A native macOS build/run has never happened (link-only
   cross-checks, see Build / release flow). Fix: a `make fetch` + `make clean test` job on
   Linux/macOS/Windows.
+- **The gate scripts are never type-checked.** Workspace § The gate (2026-10-22): a test task that
+  skips type-checking is not a gate, and Bun never type-checks. `scripts/*.ts` run under Bun only.
+  Owner, 2026-10-22: RECORD, do not add yet — a `tsc --noEmit` check would need `typescript` +
+  Bun's types (a `package.json` in a C repo). Revisit if a script bug slips past the self-test.
 - **Suite coverage vs -js:** `wasi_io_50` (WASI fd_write) and `init_check` (`_initialize`) are in
   the -js reference set but not exercised by `spec_tests.c`; add them with the fixture refresh above.
 
@@ -210,6 +214,12 @@ From `../../cmem/handoffs.md`; the workspace sweep reads this section.
   trimmed to the workspace floor).
 - **L2 (cut tracked `CLAUDE.md` to a pointer)** — done: `6ca86e9` (archive: `git show 411bb59:CLAUDE.md`).
 - **H7 (reference fixtures)** — deferred to the next wasmtk release (see Known gaps).
+- **H16 (`.git` growth)** — applied 2026-10-22 with the owner's OK (gc, fsck clean,
+  `maintenance.strategy gc`, 1 pack); details in the gitignored `local/environment.md`.
+- **For the workspace sweep — drift W7 / layout-and-packaging P5 (org Actions policy):** MEASURED
+  2026-10-22: run `39804596951` on `0f9b6e3` (push) executed `oven-sh/setup-bun@v2` in this repo's
+  `validate` job and succeeded — the `synapticforge1` org permits third-party `uses:` for this repo.
+  (`mlugg/setup-zig@v2` is in the tags-only `compat` job, not yet run.)
 - **H6** — done 2026-10-22: ★ copy + § L in `best-practices.md` and the memory-layout audit
   (`7b7be45`); the SemVer compatibility gate ([compat-gate.md](compat-gate.md)). Only the CI
   `compat` job is unexercised until the next tag.

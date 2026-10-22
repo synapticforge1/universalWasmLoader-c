@@ -33,8 +33,8 @@ gate cannot tell widening from narrowing and errs high (same as -js).
 the portfile, which CI checks agree). It stays at the last released tag; `bump` refuses otherwise.
 `bump` rewrites both, drops `port-version`, and recomputes `UWL_HEADER_SHA512` /
 `UWL_LICENSE_SHA512` from the COMMITTED blobs (`git cat-file blob HEAD:…`) — that is what
-raw.githubusercontent serves at the tag, and on this machine `LICENSE` is CRLF in the working tree,
-so hashing the working file would be wrong. It does not commit, edit `versions/`, tag or push.
+raw.githubusercontent serves at the tag; a working file can differ from it (line-ending conversion),
+so hashing the working file could be wrong. It does not commit, edit `versions/`, tag or push.
 
 **Previous-tag tests:** `git archive <tag> tests` into `.compat/` (gitignored, deleted after;
 `--keep` keeps it) beside a copy of the CURRENT header, built with `make -f ../Makefile
@@ -70,11 +70,12 @@ reads only the leading comment.
 
 - The CI `compat` job (tags only) has never run: it is the first native Linux `zig cc` build and
   run of the suite (Zig 0.16.0 via `mlugg/setup-zig@v2`, Bun 1.4.3 via `oven-sh/setup-bun@v2`).
-  The `validate` additions run on the next push.
+  The `validate` additions (surface `--check`, self-test) ran green on Linux in run `39804596951`
+  (`0f9b6e3`, 2026-10-22).
 
 ## Traps met building it
 
-- Cloning this exFAT repo needs `git -c safe.directory=<repo>/.git clone` (no ownership recorded),
-  plus `-c core.longpaths=true` for a scratchpad target (same as -js).
+- Cloning the repo for a scratch run can need per-command git options on some filesystems; the
+  specifics for this machine are in the gitignored `local/environment.md`.
 - `String.prototype.replace` with a STRING replacement expands `$$`, `$'`, `$&`: the ★ copy for
   `best-practices.md` corrupted two rules that way until the splice used a function replacer.
