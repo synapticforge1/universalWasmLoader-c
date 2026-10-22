@@ -140,6 +140,8 @@ sha256 of all four `.wasm` differ, `.wit` identical).
   anything; use `make clean test` when the result is meant as evidence. Verified 2026-10-22 (zig
   0.16.0, wasmtime 45.0.2 `x86_64-mingw`, static): `make clean test` (zig cc) → 29/29, and
   `make CC=gcc clean test` → 29/29.
+- **Releasing (2026-10-22):** `make bump KIND=patch|minor|major` — gated by the surface floor and the
+  previous tag's tests; see [compat-gate.md](compat-gate.md) and `docs/vcpkg.md` § 0 / § 4.
 - **Toolchain note (MinGW static link):** `wasi.h` decorates every `_WIN32` symbol
   `__declspec(dllimport)` unless `WASI_API_EXTERN` is pre-defined (unlike `wasm.h`, which already
   exempts MinGW). The header pre-defines `WASI_API_EXTERN` to plain `extern` for `__MINGW32__` /
@@ -208,4 +210,6 @@ From `../../cmem/handoffs.md`; the workspace sweep reads this section.
   trimmed to the workspace floor).
 - **L2 (cut tracked `CLAUDE.md` to a pointer)** — done: `6ca86e9` (archive: `git show 411bb59:CLAUDE.md`).
 - **H7 (reference fixtures)** — deferred to the next wasmtk release (see Known gaps).
-- **H6 (`best-practices.md` ★ copy, memory layout, SemVer compatibility gate)** — open, not started.
+- **H6** — done 2026-10-22: ★ copy + § L in `best-practices.md` and the memory-layout audit
+  (`7b7be45`); the SemVer compatibility gate ([compat-gate.md](compat-gate.md)). Only the CI
+  `compat` job is unexercised until the next tag.

@@ -50,7 +50,7 @@ endif
 
 TEST_BIN = tests/spec_tests$(EXE)
 
-.PHONY: all test fetch clean
+.PHONY: all test fetch clean print-sdk surface surface-check compat compat-selftest bump
 
 all: test
 
@@ -71,3 +71,27 @@ check-sdk:
 
 clean:
 	rm -f $(TEST_BIN)
+
+# ── Compatibility gate (cmem/compat-gate.md) ─────────────────────────────────
+# surface        write api-surface.json from the header (re-baseline: own commit)
+# surface-check  fail if api-surface.json is stale
+# compat         floor vs the last tag + the last tag's tests on this header
+# bump KIND=..   patch|minor|major; refuses a bump below the floor
+
+print-sdk:
+	@echo $(abspath $(WASMTIME_SDK))
+
+surface:
+	bun run scripts/surface.ts
+
+surface-check:
+	bun run scripts/surface.ts --check
+
+compat:
+	bun run scripts/compat.ts
+
+compat-selftest:
+	bun run scripts/check-compat-gate.ts
+
+bump:
+	bun run scripts/bump.ts $(KIND)

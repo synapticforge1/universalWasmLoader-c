@@ -26,7 +26,8 @@ Distributed through the repo's own vcpkg registry (`ports/`, `versions/`).
    compiler is `zig cc` (plus Zig's `libunwind`); a plain `make test` can pass on a stale binary.
 2. **Scripting is Bun/TypeScript**, no shell scripts, no heredocs; commit messages go through a file
    (`git commit -F`). Rules: workspace floor + `cmem/working-rules.md`.
-3. **Nothing is pushed, tagged or published unless the owner says so.** The vcpkg port downloads
+3. **Nothing is pushed, tagged or published unless the owner says so.** Releases go through
+   `make bump KIND=…` (the compatibility gate, `cmem/compat-gate.md`). The vcpkg port downloads
    the header from the `v<version>` tag, so a tag IS a release; CI (`vcpkg-release.yml`) validates
    the port but does not run the C tests.
 

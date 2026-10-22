@@ -63,3 +63,6 @@ vendor/
 build/
 CMakeCache.txt
 CMakeFiles/
+
+# Compatibility gate scratch (scripts/compat.ts)
+.compat/

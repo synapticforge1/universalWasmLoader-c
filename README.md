@@ -118,7 +118,7 @@ make fetch        # download the wasmtime C API SDK (override WASMTIME_VERSION /
 make test         # build and run the reference suite (tests/spec_tests.c)
 ```
 
-Defaults target MinGW gcc on Windows (`x86_64-mingw`, static link). For other platforms:
+Defaults fetch the Windows MinGW SDK (`x86_64-mingw`) and link statically. For other platforms:
 
 ```sh
 make fetch WASMTIME_PLATFORM=x86_64-linux
@@ -152,6 +152,21 @@ The port downloads the matching wasmtime C API SDK for your triplet and wires
 the include path, the wasmtime library, and the platform system libraries into
 that one target. See [`docs/vcpkg.md`](docs/vcpkg.md) for registry setup and the
 quick overlay-port path.
+
+## Versioning & breaking changes
+
+Releases follow [Semantic Versioning 2.0.0](https://semver.org). The public surface — every
+declaration in the header's public section, plus the loader SPEC version it conforms to — is
+snapshotted in [`api-surface.json`](api-surface.json), and a release is gated against it: anything
+removed or changed requires a major version, anything added at least a minor, and a patch or minor
+release must also pass the previous release's test suite unmodified. Removals are deprecated for at
+least one minor release first and listed below.
+
+### ⚠️ Breaking Changes
+
+| Version | Change | Migration |
+| --- | --- | --- |
+| — | None since 1.0.0. | — |
 
 ## License
 

@@ -9,8 +9,12 @@ this repo. **A repo's own rules govern inside that repo.**
 
 - **In-tree scripts:** `scripts/fetch-wasmtime.ts` (called by `make fetch` as
   `bun run scripts/fetch-wasmtime.ts $(WASMTIME_VERSION) $(WASMTIME_PLATFORM)`). It replaced the bash
-  `scripts/fetch-wasmtime.sh` on 2026-10-22; no shell scripts remain in the repo. Besides C, Bun is
-  the only scripting runtime here.
+  `scripts/fetch-wasmtime.sh` on 2026-10-22; no shell scripts remain in the repo. The compatibility
+  gate (2026-10-22): `scripts/surface.ts`, `compat.ts`, `bump.ts`, `check-compat-gate.ts`, run via
+  `make surface | surface-check | compat | compat-selftest | bump KIND=…` ([compat-gate.md](compat-gate.md)).
+  Besides C, Bun is the only scripting runtime here.
+- **Releases go through `make bump`**, never a hand edit of the version line or the sha512 pins; a
+  surface change is re-baselined (`make surface`) in its own commit before the bump.
 - **External tools a script spawns run with a relative path and `cwd`**, never an absolute Windows
   path: GNU tar reads `D:\…` as a remote `host:path`.
 

@@ -49,6 +49,35 @@ jobs:
           tag="${GITHUB_REF_NAME#v}"
           mf=$(grep -oP '"version"\s*:\s*"\K[^"]+' ports/universal-wasm-loader-c/vcpkg.json)
           [ "$tag" = "$mf" ] || { echo "::error::tag v$tag != vcpkg.json version $mf"; exit 1; }
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - name: api-surface.json is current (compatibility gate, Rule 1)
+        run: bun run scripts/surface.ts --check
+      - name: Compatibility gate self-test
+        run: bun run scripts/check-compat-gate.ts
+
+  compat:
+    # Compatibility gate on the tagged release commit (Rules 2 + 3, cmem/compat-gate.md):
+    # the version must meet the floor vs the previous tag, and for a patch/minor
+    # the previous tag's tests must pass against this header.
+    if: github.ref_type == 'tag'
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+      - name: Fetch the wasmtime C API
+        run: make fetch WASMTIME_PLATFORM=x86_64-linux
+      - name: Floor and previous-tag tests
+        run: WASMTIME_PLATFORM=x86_64-linux bun run scripts/compat.ts --release
 
   install:
     # Real overlay-port install across platforms. Runs only when the v<version>

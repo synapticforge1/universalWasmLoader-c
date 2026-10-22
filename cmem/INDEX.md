@@ -16,7 +16,7 @@ single-topic.
 - **Layout** (workspace `../../../cmem/memory-conventions.md`): a small loader port, so
   `overview.md` carries what-it-is, state, release flow, known gaps AND the open list (the status
   narrative exists once, there); `working-rules.md` the repo-specific rules; `best-practices.md`
-  method rules. `CLAUDE.md` is a pointer only.
+  method rules; `compat-gate.md` the release gate. `CLAUDE.md` is a pointer only.
 
 ### The "update the project memory" trigger (binding on every agent)
 When the owner says **"update the project memory"** (or a synonym — "update memory", "record this"),
@@ -37,5 +37,6 @@ comprehensive audit across tested AND untested paths for: (1) workarounds / temp
 | File | What it holds |
 | --- | --- |
 | [overview.md](overview.md) | What this loader port is, where the repo lives (`synapticforge1` org since 2026-10-20), its language/runtime, API surface, ABI/SPEC conformance status, tests, release flow, known gaps (fixture refresh deferred to the next wasmtk release; CI runs no C tests), and the status of workspace letters for this repo (2026-10-22) |
+| [compat-gate.md](compat-gate.md) | The SemVer compatibility gate (letter H6, 2026-10-22): surface snapshot, floor, previous-tag tests, `make bump`, CI, the end-to-end inversion table |
 | [best-practices.md](best-practices.md) | METHOD rules: this repo's own (§ L) + the workspace's 28 ★ convergent rules, copied verbatim by script and stamped 2026-10-22 (letter H6) |
 | [working-rules.md](working-rules.md) | Repo-specific rules on top of the workspace floor (which is **Bun**/TypeScript since 2026-10-22): C compiler defaults to `zig cc` (2026-10-22); in-tree scripts (`scripts/fetch-wasmtime.ts`, ported from bash 2026-10-22) |

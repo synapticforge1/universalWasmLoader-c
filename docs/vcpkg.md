@@ -36,9 +36,13 @@ git push origin main
 git tag v1.1.0 && git push origin v1.1.0
 ```
 
-(If the header content changes, bump `UWL_VERSION` + `UWL_HEADER_SHA512` in
-`ports/universal-wasm-loader-c/portfile.cmake`, re-tag, and run
-`vcpkg x-add-version --all` — see §4.)
+To release a new version, run `make bump KIND=patch|minor|major` on a clean tree.
+It refuses a bump below the compatibility floor (see the README's "Versioning"
+section), runs the previous release's tests for a patch or minor, and updates
+`vcpkg.json` plus `UWL_VERSION` / `UWL_HEADER_SHA512` / `UWL_LICENSE_SHA512` in
+`ports/universal-wasm-loader-c/portfile.cmake` from the committed files. Then
+commit, update `versions/` (§4), and tag the new version. Never move an existing
+tag: consumers' sha512 pins are taken from it.
 
 ## 1. Get vcpkg
 
