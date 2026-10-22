@@ -69,3 +69,7 @@ CMakeFiles/
 
 # Private, machine-local memory (workspace rule: no personal information committed)
 cmem/local/
+
+# Tool and IDE settings record local paths; never tracked (workspace rule, 2026-10-22)
+.vscode/
+.claude/settings.local.json
