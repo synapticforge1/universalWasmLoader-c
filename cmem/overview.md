@@ -162,6 +162,17 @@ the `-rs`/`-js` ones (SPEC §7-#7).
 
 ## Known gaps / not yet done
 
+- **Reference fixtures are stale (workspace letter H7 / S4) — DEFERRED until the next wasmtk
+  release (owner, 2026-10-22).** All four `tests/*_50.wasm` differ from loader-js's stamped set
+  (`-js` `tests/fixtures.json`, commit `bd4f8ab`); the `.wit` files match. That set was built by
+  wasmtk `f50c8e4`, which on 2026-10-22 was on no `jrmarcum/wasmtk` remote branch or tag (bare
+  clone: "not our ref"; locally 54 commits past `origin/main`, on unpushed `chore/binaryang-*`
+  branches), so the stamp is not pinnable. **Trigger:** a wasmtk release exists and loader-js's
+  stamp names a commit reachable from it (re-check; -js may regenerate first). **Then:** copy
+  `tests/*.wasm`, `tests/*.wit`, `tests/fixtures.json` (and `init_check.wat`) from -js unmodified,
+  verify every sha256 in `files`, `make clean test`. `wasi_io_50` and `init_check` are not yet
+  exercised by `spec_tests.c` — a separate gap.
+
 - **Host import callbacks returning `string`** are not supported (would require allocating into WASM
   memory from the trampoline; no fixture needs it). Numeric/bool import returns work.
 - **URL loading** (the JS/`-rs` `http(s)://` path) is not implemented — file paths only.
