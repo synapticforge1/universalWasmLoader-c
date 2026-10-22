@@ -126,9 +126,11 @@ the `-rs`/`-js` ones (SPEC §7-#7).
 - **`zig cc` needs `-lunwind`.** `libwasmtime.a` contains Rust std built against libgcc's unwinder
   (`_Unwind_*`, and `_GCC_specific_handler` on mingw). gcc links that implicitly; zig cc does not, so
   the link fails with ~9 undefined `_Unwind_*` symbols. The Makefile appends `-lunwind` (Zig's bundled
-  LLVM libunwind, which provides them) to `SYSLIBS` whenever `CC` contains `zig`. Needed on Linux too
-  (verified 2026-10-22 by cross-linking `-target x86_64-linux-gnu` against the `x86_64-linux` SDK:
-  fails without, links with). macOS not checked.
+  LLVM libunwind, which provides them) to `SYSLIBS` whenever `CC` contains `zig`, **except on macOS**
+  (`UNAME_S=Darwin`), where libSystem already carries the unwinder. Verified 2026-10-22 by
+  cross-linking with zig cc (link only, not run): `x86_64-linux-gnu` fails without `-lunwind` and
+  links with it; `aarch64-macos` and `x86_64-macos` link either way, so macOS keeps the system
+  unwinder rather than a second copy. A native macOS run is still unverified.
 - **A plain `make test` can report 29/29 from a stale `tests/spec_tests.exe`** without compiling
   anything; use `make clean test` when the result is meant as evidence. Verified 2026-10-22 (zig
   0.16.0, wasmtime 45.0.2 `x86_64-mingw`, static): `make clean test` (zig cc) → 29/29, and

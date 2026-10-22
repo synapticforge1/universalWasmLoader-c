@@ -31,9 +31,12 @@ endif
 
 # wasmtime's static lib is Rust std built against libgcc's unwinder (_Unwind_*,
 # _GCC_specific_handler). gcc links that implicitly; zig cc does not, so link
-# zig's bundled LLVM libunwind, which provides the same symbols.
+# zig's bundled LLVM libunwind, which provides the same symbols. macOS is
+# exempt: libSystem already carries the unwinder.
 ifneq ($(findstring zig,$(CC)),)
-  SYSLIBS += -lunwind
+  ifneq ($(UNAME_S),Darwin)
+    SYSLIBS += -lunwind
+  endif
 endif
 
 # Static link by default (no DLL on PATH needed). Set WASMTIME_LINK=shared to
