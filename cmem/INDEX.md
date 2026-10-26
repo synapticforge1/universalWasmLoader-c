@@ -32,13 +32,13 @@ When the owner says **"look for code issues"** (or "code audit" / "audit the cod
 comprehensive audit across tested AND untested paths for: (1) workarounds / temporary hacks;
 (2) dead code; (3) bugs (wrong ABI marshalling, off-by-one pointer/length math, endianness, missing
 `cabi_post` calls); and (4) silent fall-throughs (returning a default instead of erroring). Report
-`file:line` + severity, fix the safe ones, and keep the test suite green (`make clean test` → 29/29; default compiler is `zig cc`).
+`file:line` + severity, fix the safe ones, and keep the test suite green (`make clean test` → 34/34; default compiler is `zig cc`).
 
 ## Files
 
 | File | What it holds |
 | --- | --- |
-| [overview.md](overview.md) | What this loader port is, where the repo lives (`synapticforge1` org since 2026-10-20), its language/runtime, API surface, ABI/SPEC conformance status, tests, release flow, known gaps (`wasi_io_50` / `init_check` not exercised; CI runs no C tests; scripts not type-checked), and the status of workspace letters for this repo — all done except H7's two untested fixtures (2026-10-26) |
+| [overview.md](overview.md) | What this loader port is, where the repo lives (`synapticforge1` org since 2026-10-20), its language/runtime, API surface, ABI/SPEC conformance status, tests, release flow, known gaps (CI runs no C tests; scripts not type-checked), and the status of workspace letters for this repo — all done (2026-10-26) |
 | [handoffs.md](handoffs.md) | Letters FROM this repo to siblings, full text; each indexed by a row in the workspace ledger. C13 (2026-10-26, closed the same day): loader-js, re-stamp the H7 fixtures from wasmtk `4a5c3cf668d` |
 | [compat-gate.md](compat-gate.md) | The SemVer compatibility gate (letter H6, 2026-10-22): surface snapshot, floor, previous-tag tests, `make bump`, CI, the end-to-end inversion table |
 | [history-purge.md](history-purge.md) | The 2026-10-22 history rewrite (letter H19): what was purged, how it was verified, what is out of our control, and the full old → new commit hash map |

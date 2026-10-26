@@ -38,11 +38,11 @@ The header-only loader is implemented and passes the full reference suite. Relea
 port-version 2 since 2026-10-20. Working tree:
 
 - `universal_wasm_loader.h` — the single-header library (public API + `UWL_IMPLEMENTATION` body).
-- `tests/spec_tests.c` — the SPEC §8 reference suite (29 assertions).
+- `tests/spec_tests.c` — the SPEC §8 reference suite (34 assertions since 2026-10-26).
 - `tests/*.wasm` + `tests/*.wit` + `tests/init_check.{wat,wasm}` + `tests/fixtures.json` — the
   workspace reference set, copied unmodified from loader-js on 2026-10-26 (stamp: wasmtk
   `4a5c3cf668d`; see Tests). `spec_tests.c` exercises `math_50`, `booleans_50`, `strings_50`,
-  `imports_50`; `wasi_io_50` and `init_check` are present but untested (Known gaps). Until
+  `imports_50`, and (since 2026-10-26) `wasi_io_50` and `init_check` (SPEC §10). Until
   2026-10-26 the four `*_50` came from the `-rs` port (2026-06) and their `.wasm` bytes differed.
 - `Makefile` — `make fetch` (download the wasmtime C API SDK into `vendor/`), `make test` (build +
   run), `make clean`. Override `CC` / `WASMTIME_VERSION` / `WASMTIME_PLATFORM` / `WASMTIME_LINK`.
@@ -117,8 +117,15 @@ pure-compute modules and partial-import modules still instantiate.
 
 ## Tests
 
-`make test` → builds `tests/spec_tests.c` and runs it: **29 passed, 0 failed.** Covers all four
-`*_50` fixtures plus singleton, pool, and version-pin-rejected scenarios. **The fixtures ARE the
+`make test` → builds `tests/spec_tests.c` and runs it: **34 passed, 0 failed** (29 until
+2026-10-26). Covers all four `*_50` fixtures, SPEC §10 (`init_check`: `getValue()==99` through the
+raw `uwl_call` path proves `_initialize` ran; `wasi_io_50`: `logAndDouble(21)==42` proves the WASI
+context satisfied `fd_write` — the module's own `doubling` line appears on stdout), plus singleton,
+pool, and version-pin-rejected scenarios. Both §10 tests were inverted 2026-10-26 on a scratch
+copy of the header: `_initialize` never looked up → only `getValue()==99` fails; WASI not defined in
+the linker → only `logAndDouble(21)==42` fails (33/34 each). ⚠️ Without WASI the module still LOADS
+(unknown imports are bound to traps) and the CALL traps, so the result is the evidence, not the
+load. **The fixtures ARE the
 reference set** (H7, 2026-10-26): copied unmodified from loader-js `tests/` at its `36aa661`
 (stamp `tests/fixtures.json`: wasmtk `4a5c3cf668d`, `synapticforge1/wasmtk`); all 12 sha256 in
 `files` verified; the four `*_50.wasm` changed from the 2026-06 copies, the `.wit` did not.
@@ -198,9 +205,6 @@ re-verify; never edit them here.
   skips type-checking is not a gate, and Bun never type-checks. `scripts/*.ts` run under Bun only.
   Owner, 2026-10-22: RECORD, do not add yet — a `tsc --noEmit` check would need `typescript` +
   Bun's types (a `package.json` in a C repo). Revisit if a script bug slips past the self-test.
-- **Suite coverage vs -js:** `wasi_io_50` (WASI fd_write) and `init_check` (`_initialize`) are in
-  the -js reference set and, since 2026-10-26, in `tests/`, but `spec_tests.c` does not exercise
-  them yet — the remaining half of H7's coverage.
 
 ## Workspace letters — status for this repo (2026-10-26)
 
@@ -213,8 +217,8 @@ and the letters in `../../../cmem/handoffs.md`; the workspace sweep reads this s
 - **H7 / C11 (reference fixtures)** — done 2026-10-26: the stamped set copied from loader-js
   `36aa661` (wasmtk `4a5c3cf668d`; history `f50c8e4` → `84b3e180eba` → `4a5c3cf668d`, wasmtk's
   maps), 12/12 sha256, 29/29, inverted (see Tests). Asked of loader-js by letter **C13**
-  ([handoffs.md](handoffs.md)), verified and closed the same day. Still open: `wasi_io_50` and
-  `init_check` in `spec_tests.c` (Known gaps).
+  ([handoffs.md](handoffs.md)), verified and closed the same day. `wasi_io_50` and `init_check`
+  exercised by `spec_tests.c` the same day (34/34, both inverted; see Tests) — H7 fully done here.
 - **H17 part 3 (stale `jrmarcum/wasmtk` link)** — done 2026-10-26: `README.md:4` →
   `synapticforge1/wasmtk`.
 - **H22 / H25 §3(d) (path test)** — recorded 2026-10-26 in [working-rules.md](working-rules.md).

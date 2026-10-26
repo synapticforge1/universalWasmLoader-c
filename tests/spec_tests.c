@@ -104,6 +104,34 @@ static void test_imports(void) {
     uwl_free(m);
 }
 
+/* init_check.wasm has no .wit (raw-exports path); its `_initialize` sets a
+ * global to 99 that `getValue` reads — so 99 proves the loader invoked it. */
+static void test_initialize(void) {
+    printf("init_check — SPEC §10 _initialize called after instantiation\n");
+    uwl_module_t *m = load("init_check.wasm", NULL, 0);
+    CHECK(m != NULL, "init_check loads");
+    if (!m) return;
+    uwl_val_t out = uwl_void();
+    char *err = NULL;
+    int rc = uwl_call(m, "getValue", NULL, 0, &out, &err);
+    if (rc != 0) { printf("  CALL ERROR (getValue): %s\n", err ? err : "?"); uwl_string_free(err); }
+    CHECK(rc == 0 && out.kind == UWL_I32, "raw getValue() returns an i32");
+    CHECK(rc == 0 && uwl_as_i32(out) == 99, "getValue()==99 (proves _initialize ran)");
+    uwl_free(m);
+}
+
+/* wasi_io_50 calls console.log → imports wasi_snapshot_preview1.fd_write.
+ * Without the loader's WASI context it still instantiates (unknown imports are
+ * bound to traps), but the call traps — so the result is the evidence. */
+static void test_wasi_io(void) {
+    printf("wasi_io_50 — SPEC §10 WASI lets an I/O library instantiate\n");
+    uwl_module_t *m = load("wasi_io_50.wasm", NULL, 0);
+    CHECK(m != NULL, "wasi_io_50 loads");
+    if (!m) return;
+    CHECK(uwl_call_i32(m, "logAndDouble", 21) == 42, "logAndDouble(21)==42 (fd_write ran via WASI)");
+    uwl_free(m);
+}
+
 static void test_singleton(void) {
     printf("singleton — caches one instance\n");
     uwl_singleton_t *s = uwl_singleton_new(FX("math_50.wasm"), NULL, 0);
@@ -149,6 +177,8 @@ int main(void) {
     test_booleans();
     test_strings();
     test_imports();
+    test_initialize();
+    test_wasi_io();
     test_singleton();
     test_pool();
     test_version();

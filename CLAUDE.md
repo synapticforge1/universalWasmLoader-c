@@ -20,7 +20,7 @@ Distributed through the repo's own vcpkg registry (`ports/`, `versions/`).
 
 - **"update the project memory"** — revise the `cmem/` files; sync `README.md` only where
   user-relevant.
-- **"look for code issues"** — the comprehensive audit; keep `make clean test` at 29/29.
+- **"look for code issues"** — the comprehensive audit; keep `make clean test` at 34/34.
 
 ## Three things that bite immediately
 
