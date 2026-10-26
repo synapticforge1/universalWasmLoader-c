@@ -1,7 +1,7 @@
 # universalWasmLoader-c
 
 A single-header **C** loader for `.wasm` reactor/library modules produced by
-[`wasmtk`](https://github.com/jrmarcum/wasmtk) (e.g. TypeScript compiled via `wasic`/`modc`). It
+[`wasmtk`](https://github.com/synapticforge1/wasmtk) (e.g. TypeScript compiled via `wasic`/`modc`). It
 auto-detects the companion `.wit` file and applies the Canonical ABI, so you call WASM exports with
 native C values — the C sibling of the reference JS loader
 [`@jrmarcum/universal-wasm-loader`](https://jsr.io/@jrmarcum/universal-wasm-loader). Conforms to the

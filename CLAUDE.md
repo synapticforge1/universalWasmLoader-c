@@ -1,8 +1,10 @@
 # CLAUDE.md — universalWasmLoader-c (pointer)
 
-> **At session start, read `../../cmem/handoffs.md` for letters addressed to this repo.** The workspace
-> session (`../../cmem/INDEX.md`) reviews across the sibling repos and reports there; nothing is ever
-> written into this repo from outside. (owner directive, 2026-09-20)
+> **At session start, and before each new work item, read `../../cmem/workspace-correspondence.md`**
+> (the ledger: one row per inter-project item) for every row addressed to this repo or touching the
+> work, then the letter it points to in `../../cmem/handoffs.md`. The workspace session
+> (`../../cmem/INDEX.md`) reviews across the sibling repos and reports there; nothing is ever
+> written into this repo from outside. (owner directive, 2026-09-20; ledger first, owner 2026-10-26)
 
 **All project memory lives in [`cmem/`](cmem/INDEX.md).** Start at `cmem/INDEX.md`; state and open
 gaps are in [`cmem/overview.md`](cmem/overview.md). This file is only the pointer (the pre-2026-10-22

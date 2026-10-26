@@ -39,10 +39,11 @@ port-version 2 since 2026-10-20. Working tree:
 
 - `universal_wasm_loader.h` — the single-header library (public API + `UWL_IMPLEMENTATION` body).
 - `tests/spec_tests.c` — the SPEC §8 reference suite (29 assertions).
-- `tests/*.wasm` + `tests/*.wit` — the four reference fixtures (`math_50`, `booleans_50`,
-  `strings_50`, `imports_50`), copied from the `-rs` port in 2026-06. **Stale since loader-js
-  restamped the reference set on 2026-10-12** — the `.wasm` bytes differ, the `.wit` match; refresh
-  deferred (see Known gaps).
+- `tests/*.wasm` + `tests/*.wit` + `tests/init_check.{wat,wasm}` + `tests/fixtures.json` — the
+  workspace reference set, copied unmodified from loader-js on 2026-10-26 (stamp: wasmtk
+  `4a5c3cf668d`; see Tests). `spec_tests.c` exercises `math_50`, `booleans_50`, `strings_50`,
+  `imports_50`; `wasi_io_50` and `init_check` are present but untested (Known gaps). Until
+  2026-10-26 the four `*_50` came from the `-rs` port (2026-06) and their `.wasm` bytes differed.
 - `Makefile` — `make fetch` (download the wasmtime C API SDK into `vendor/`), `make test` (build +
   run), `make clean`. Override `CC` / `WASMTIME_VERSION` / `WASMTIME_PLATFORM` / `WASMTIME_LINK`.
 - `scripts/fetch-wasmtime.ts` — **Bun** script (ported from `fetch-wasmtime.sh` 2026-10-22; see
@@ -117,9 +118,13 @@ pure-compute modules and partial-import modules still instantiate.
 ## Tests
 
 `make test` → builds `tests/spec_tests.c` and runs it: **29 passed, 0 failed.** Covers all four
-fixtures plus singleton, pool, and version-pin-rejected scenarios. The fixtures matched the `-rs`
-copies when taken (2026-06); they do NOT match loader-js's current stamped set (measured 2026-10-22,
-sha256 of all four `.wasm` differ, `.wit` identical).
+`*_50` fixtures plus singleton, pool, and version-pin-rejected scenarios. **The fixtures ARE the
+reference set** (H7, 2026-10-26): copied unmodified from loader-js `tests/` at its `36aa661`
+(stamp `tests/fixtures.json`: wasmtk `4a5c3cf668d`, `synapticforge1/wasmtk`); all 12 sha256 in
+`files` verified; the four `*_50.wasm` changed from the 2026-06 copies, the `.wit` did not.
+`make clean test` → 29/29 on them (zig cc, 2026-10-26); inverted by truncating `math_50.wasm` to
+20 bytes → 16 passed, 3 failed, then restored. To refresh: copy the same files again from -js and
+re-verify; never edit them here.
 
 ## Build / release flow
 
@@ -172,17 +177,6 @@ sha256 of all four `.wasm` differ, `.wit` identical).
 
 ## Known gaps / not yet done
 
-- **Reference fixtures are stale (workspace letter H7 / S4) — DEFERRED until the next wasmtk
-  release (owner, 2026-10-22).** All four `tests/*_50.wasm` differ from loader-js's stamped set
-  (`-js` `tests/fixtures.json`, commit `bd4f8ab`); the `.wit` files match. That set was built by
-  wasmtk `f50c8e4`, which on 2026-10-22 was on no `jrmarcum/wasmtk` remote branch or tag (bare
-  clone: "not our ref"; locally 54 commits past `origin/main`, on unpushed `chore/binaryang-*`
-  branches), so the stamp is not pinnable. **Trigger:** a wasmtk release exists and loader-js's
-  stamp names a commit reachable from it (re-check; -js may regenerate first). **Then:** copy
-  `tests/*.wasm`, `tests/*.wit`, `tests/fixtures.json` (and `init_check.wat`) from -js unmodified,
-  verify every sha256 in `files`, `make clean test`. `wasi_io_50` and `init_check` are not yet
-  exercised by `spec_tests.c` — a separate gap.
-
 - **Host import callbacks returning `string`** are not supported (would require allocating into WASM
   memory from the trampoline; no fixture needs it). Numeric/bool import returns work.
 - **URL loading** (the JS/`-rs` `http(s)://` path) is not implemented — file paths only.
@@ -205,16 +199,32 @@ sha256 of all four `.wasm` differ, `.wit` identical).
   Owner, 2026-10-22: RECORD, do not add yet — a `tsc --noEmit` check would need `typescript` +
   Bun's types (a `package.json` in a C repo). Revisit if a script bug slips past the self-test.
 - **Suite coverage vs -js:** `wasi_io_50` (WASI fd_write) and `init_check` (`_initialize`) are in
-  the -js reference set but not exercised by `spec_tests.c`; add them with the fixture refresh above.
+  the -js reference set and, since 2026-10-26, in `tests/`, but `spec_tests.c` does not exercise
+  them yet — the remaining half of H7's coverage.
 
-## Workspace letters — status for this repo (2026-10-22)
+## Workspace letters — status for this repo (2026-10-26)
 
-From `../../cmem/handoffs.md`; the workspace sweep reads this section.
+From the workspace ledger `../../../cmem/workspace-correspondence.md` (read first since 2026-10-26)
+and the letters in `../../../cmem/handoffs.md`; the workspace sweep reads this section.
 
 - **H15 (Bun scripting)** — done: `5fad372` (bash → Bun fetch script), `f1e14d1` (local rules
   trimmed to the workspace floor).
 - **L2 (cut tracked `CLAUDE.md` to a pointer)** — done: `e189da8` (archive: `git show 1057d89:CLAUDE.md`).
-- **H7 (reference fixtures)** — deferred to the next wasmtk release (see Known gaps).
+- **H7 / C11 (reference fixtures)** — done 2026-10-26: the stamped set copied from loader-js
+  `36aa661` (wasmtk `4a5c3cf668d`; history `f50c8e4` → `84b3e180eba` → `4a5c3cf668d`, wasmtk's
+  maps), 12/12 sha256, 29/29, inverted (see Tests). Asked of loader-js by letter **C13**
+  ([handoffs.md](handoffs.md)), verified and closed the same day. Still open: `wasi_io_50` and
+  `init_check` in `spec_tests.c` (Known gaps).
+- **H17 part 3 (stale `jrmarcum/wasmtk` link)** — done 2026-10-26: `README.md:4` →
+  `synapticforge1/wasmtk`.
+- **H22 / H25 §3(d) (path test)** — recorded 2026-10-26 in [working-rules.md](working-rules.md).
+  Scan at HEAD with binaries (`git grep -a`): no drive path.
+- **H24 / H27 (★ re-copy, new stamp)** — done 2026-10-26: rule 5.2 re-copied, stamp now
+  `Copied from synapticforge1/cmem/best-practices.md on 2026-10-26`; text check 0 differences
+  ([best-practices.md](best-practices.md) § ★), including ★ 6.1's corrected id (C8).
+- **H28 (maintainer address in one `cmem/` note; wabt-ts / binaryen-ts retired)** — record-only,
+  nothing to change: this repo's history and commits use noreply (H19), it carries no contact note,
+  and no tracked file cites either retired repo (★ rule tags name them as origins, not locations).
 - **H16 (`.git` growth)** — applied 2026-10-22 with the owner's OK (gc, fsck clean,
   `maintenance.strategy gc`, 1 pack); details in the gitignored `local/environment.md`.
 - **H18 (personal drive paths)** — not addressed here, but the scan pattern found the old
@@ -233,4 +243,4 @@ From `../../cmem/handoffs.md`; the workspace sweep reads this section.
   (`mlugg/setup-zig@v2` is in the tags-only `compat` job, not yet run.)
 - **H6** — done 2026-10-22: ★ copy + § L in `best-practices.md` and the memory-layout audit
   (`e80d838`); the SemVer compatibility gate ([compat-gate.md](compat-gate.md)). Only the CI
-  `compat` job is unexercised until the next tag.
+  `compat` job is unexercised until the next tag. The ★ copy was re-copied 2026-10-26 (H24 / H27 above).

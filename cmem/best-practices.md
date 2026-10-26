@@ -24,14 +24,17 @@ the next free number; numbers are never reused.
   read as "not completed after ~40 min" and looked like a stall (2026-10-22). Run the matcher once
   against an already-completed run before backgrounding it. [universalWasmLoader-c]
 
-## ★ The workspace's convergent rules — a COPY, stamped 2026-10-22 (workspace letter H6)
+## ★ The workspace's convergent rules — a COPY, stamped 2026-10-26 (workspace letters H6, H24, H27)
 
-**Copied from wasmExamples/cmem/best-practices.md on 2026-10-22** (the stamp wording
-`memory-conventions.md` prescribes). **Source:** `../../../cmem/best-practices.md`, last modified
-2026-10-22; **28 rules**, every bullet the source marks **★ = convergent**: two or more repos
-derived it without reading each other. Copied VERBATIM by script (every `- **N.N ★` bullet with its
-continuation lines, under the source's `§` headings), so a rule can be cited as "workspace 2.1" in
-either place.
+**Copied from synapticforge1/cmem/best-practices.md on 2026-10-26** (the stamp wording
+`memory-conventions.md` prescribes). **Source:** `../../../cmem/best-practices.md`; **28 rules**,
+every bullet the source marks **★ = convergent**: two or more repos derived it without reading each
+other. Copied VERBATIM, under the source's `§` headings, so a rule can be cited as "workspace 2.1" in
+either place. **Re-copy 2026-10-26** (H24, H27, C8): a one-time text check (number +
+whitespace-normalized text of every `- **N.N ★` bullet with its continuation lines) found 28 = 28
+and two differences, 5.2 (the drive letter became the FILESYSTEM) and 6.1 (binaryang's post-purge
+id `8d9ba0cb9`, fixed in the source under C8); 0 after; inverted by a one-character change, which it
+caught.
 
 - **Do not edit these here.** The source is authoritative. If it changes, re-copy the whole block
   and re-stamp the date.
@@ -121,14 +124,14 @@ either place.
   right by luck. [wazmrt + wasmrt]
 - **5.2 ★ Identify the LAYER before naming a cause; the stage that REPORTS a failure is usually
   not the stage that caused it; finding a real defect at a layer is not evidence it causes your
-  symptom — vary one thing.** "Memory-grow ordering" was decoder reordering; the `D:` drive symptom
-  was diagnosed wrong three times. [wazmrt + binaryen-ts + wasmtk + wasmrt]
+  symptom — vary one thing.** "Memory-grow ordering" was decoder reordering; a symptom caused by the
+  development drive's FILESYSTEM (exFAT) was diagnosed wrong three times. [wazmrt + binaryen-ts + wasmtk + wasmrt]
 
 ### §6 Recording and claims
 
 - **6.1 ★ A written result is a CLAIM: a commit message, a status line, a doc of a safety guard, a
   contract row verified by reading. Compare it to the artifact; put a pin where the tool enforces
-  it.** `b8fafaa3f` said "pin to 132" and left 116; prose has no failure mode. [binaryang + wabt-ts + wasmrt]
+  it.** `8d9ba0cb9` (was `b8fafaa3f` before binaryang's 2026-10-23 purge; corrected here 2026-10-26, ledger C8) said "pin to 132" and left 116; prose has no failure mode. [binaryang + wabt-ts + wasmrt]
 - **6.2 ★ Write down the thing you only said out loud; write the negatives (what was varied, what
   held fixed), the calibration, and what you did NOT check; distinguish clean / measured /
   UNMEASURED.** Knowledge that exists only in a conversation is operationally identical to

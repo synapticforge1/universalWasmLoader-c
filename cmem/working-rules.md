@@ -24,6 +24,15 @@ No host Python, no committed shell scripts. This file holds only what is specifi
 - **Machine facts and anything private go in `cmem/local/`** (gitignored, verified with
   `git check-ignore -v` 2026-10-22), never in a committed file (workspace § Records, 🔒 owner
   2026-10-22). Scan the diff before committing memory.
+- **The path test is "is it machine-specific?", not "is it absolute?"** (🔒 owner, 2026-10-23;
+  workspace letter H22, full text in the floor's § Records). Not public: any path that records the
+  owner's machine layout — a user profile, the project tree, other drives, scoop / AppData installs,
+  scratchpad or session ids. Fine: repo- or sibling-relative paths, env vars, placeholders
+  (`<repo-root>`), and a CONVENTION path that names nothing about one machine and works on any
+  comparable host. A scan hit is a CANDIDATE judged by that test, so convention paths are not
+  scrubbed. Scans include binaries (`git grep -a`; workspace C3: Zig/Rust debug info embeds paths).
+  The one email allowed is the maintainer contact as commit author/committer (owner, 2026-10-26);
+  this repo's history already uses noreply (H19) and keeps it.
 
 ## C compiler: `zig cc` (owner, 2026-10-22)
 

@@ -38,8 +38,9 @@ comprehensive audit across tested AND untested paths for: (1) workarounds / temp
 
 | File | What it holds |
 | --- | --- |
-| [overview.md](overview.md) | What this loader port is, where the repo lives (`synapticforge1` org since 2026-10-20), its language/runtime, API surface, ABI/SPEC conformance status, tests, release flow, known gaps (fixture refresh deferred to the next wasmtk release; CI runs no C tests; scripts not type-checked), and the status of workspace letters for this repo — H6, H15, H16, H18, H19 done, H7 deferred (2026-10-22) |
+| [overview.md](overview.md) | What this loader port is, where the repo lives (`synapticforge1` org since 2026-10-20), its language/runtime, API surface, ABI/SPEC conformance status, tests, release flow, known gaps (`wasi_io_50` / `init_check` not exercised; CI runs no C tests; scripts not type-checked), and the status of workspace letters for this repo — all done except H7's two untested fixtures (2026-10-26) |
+| [handoffs.md](handoffs.md) | Letters FROM this repo to siblings, full text; each indexed by a row in the workspace ledger. C13 (2026-10-26, closed the same day): loader-js, re-stamp the H7 fixtures from wasmtk `4a5c3cf668d` |
 | [compat-gate.md](compat-gate.md) | The SemVer compatibility gate (letter H6, 2026-10-22): surface snapshot, floor, previous-tag tests, `make bump`, CI, the end-to-end inversion table |
 | [history-purge.md](history-purge.md) | The 2026-10-22 history rewrite (letter H19): what was purged, how it was verified, what is out of our control, and the full old → new commit hash map |
-| [best-practices.md](best-practices.md) | METHOD rules: this repo's own (§ L1–L4) + the workspace's 28 ★ convergent rules, copied verbatim by script and stamped 2026-10-22 (letter H6; re-checked unchanged the same day) |
+| [best-practices.md](best-practices.md) | METHOD rules: this repo's own (§ L1–L4) + the workspace's 28 ★ convergent rules, copied verbatim and stamped 2026-10-26 (letters H6, H24, H27, C8; text-checked, 0 differences) |
 | [working-rules.md](working-rules.md) | Repo-specific rules on top of the workspace floor: committed scripts are TypeScript on Bun (C has no scripting mechanism); the in-tree scripts and their `make` targets; releases only via `make bump`; machine facts only in the gitignored `local/`; C compiler defaults to `zig cc` (all 2026-10-22) |
