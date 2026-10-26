@@ -66,13 +66,16 @@ The self-test's first run found a real bug: the SPEC regex matched an implementa
 ("SPEC v3.0.0 callee-allocated return"), so deleting the conformance line went unnoticed; it now
 reads only the leading comment.
 
-## Not yet verified
+## First tagged run — v1.1.1, 2026-10-26
 
-- The CI `compat` job (tags only) has never run: it is the first native Linux `zig cc` build and
-  run of the suite (Zig 0.16.0 via `mlugg/setup-zig@v2`, Bun 1.4.3 via `oven-sh/setup-bun@v2`).
-  The `validate` additions (surface `--check`, self-test) ran green on Linux first in run
-  `39804596951` (`0494969`; GitHub shows the pre-H19 hash `0f9b6e3`), and again in run
-  `39823105880` on `77cf808` after the history rewrite (2026-10-22).
+- Run `40382759953` on tag `v1.1.1` (`6cda558`): **all green** — `validate`, `compat`, and
+  `install` on `x64-windows`, `arm64-osx`, `x64-linux`. The `compat` job's first run was the first
+  native Linux `zig cc` build and run of a suite here (Zig 0.16.0 via `mlugg/setup-zig@v2`, Bun
+  1.4.3 via `oven-sh/setup-bun@v2`): `compat.ts --release` = floor patch, v1.1.0's 29 tests against
+  the 1.1.1 header. Read from the run's job conclusions (public API); the job log was not read.
+- Still not covered: CI runs the PREVIOUS tag's tests, never the current `tests/spec_tests.c` (34
+  since 2026-10-26) — see overview § Known gaps. The `validate` additions (surface `--check`,
+  self-test) have run green on Linux since run `39804596951` (2026-10-22).
 
 ## Traps met building it
 

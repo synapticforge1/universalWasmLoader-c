@@ -195,15 +195,17 @@ re-verify; never edit them here.
 - **vcpkg port** validated locally on `x64-mingw-dynamic` (2026-06-17). CI (`.github/workflows/vcpkg-release.yml`)
   runs `validate` on every push/PR and real overlay-port installs on tags or manual dispatch. **Install
   VALIDATED 2026-10-20** (dispatch run `39518063717`, 1.1.0 port-version 2, downloads from the
-  `synapticforge1` org URLs) on `x64-linux`, `x64-windows` (MSVC) and `arm64-osx`. Not yet
+  `synapticforge1` org URLs) on `x64-linux`, `x64-windows` (MSVC) and `arm64-osx`; again for
+  **1.1.1** on the tag push, 2026-10-26 (run `40382759953`, same three triplets, green). Not yet
   install-tested: `x64-windows-static`, `x64-mingw-static`, `arm64-linux`, `x64-osx`.
-- **CI never builds or runs the C suite.** `vcpkg-release.yml` is the only workflow; on a push it
-  runs `validate` (port files, plus the gate's surface check and self-test since `0494969`) and
-  skips `install`. Latest: run `39823105880` on `77cf808`, 2026-10-22, the first after the H19
-  rewrite — validate ✅, `compat`/`install` skipped. So `make fetch` (Bun), the `zig cc` build and `spec_tests.c` are
+- **CI never runs the CURRENT C suite.** `vcpkg-release.yml` is the only workflow; on a push to
+  `main` it runs `validate` (port files, surface check, gate self-test) only. On a tag, `compat`
+  builds and runs the PREVIOUS tag's tests against the new header on Linux: first run 2026-10-26
+  (run `40382759953`, `v1.1.1`: all jobs green, so `make fetch` + `zig cc` + a suite now pass
+  natively on x86_64-linux — v1.1.0's 29 tests). The current 34 assertions (incl. SPEC §10) are
   verified only locally (x86_64-mingw). A native macOS build/run has never happened (link-only
-  cross-checks, see Build / release flow). Fix: a `make fetch` + `make clean test` job on
-  Linux/macOS/Windows.
+  cross-checks; the `arm64-osx` install job builds the consumer example, it runs no suite). Fix: a
+  `make fetch` + `make clean test` job on Linux/macOS/Windows.
 - **The gate scripts are never type-checked.** Workspace § The gate (2026-10-22): a test task that
   skips type-checking is not a gate, and Bun never type-checks. `scripts/*.ts` run under Bun only.
   Owner, 2026-10-22: RECORD, do not add yet — a `tsc --noEmit` check would need `typescript` +
@@ -250,4 +252,4 @@ and the letters in `../../../cmem/handoffs.md`; the workspace sweep reads this s
   (`mlugg/setup-zig@v2` is in the tags-only `compat` job, not yet run.)
 - **H6** — done 2026-10-22: ★ copy + § L in `best-practices.md` and the memory-layout audit
   (`e80d838`); the SemVer compatibility gate ([compat-gate.md](compat-gate.md)). Only the CI
-  `compat` job is unexercised until the next tag. The ★ copy was re-copied 2026-10-26 (H24 / H27 above).
+  `compat` job first ran on the `v1.1.1` tag, 2026-10-26: green ([compat-gate.md](compat-gate.md)). The ★ copy was re-copied 2026-10-26 (H24 / H27 above).
