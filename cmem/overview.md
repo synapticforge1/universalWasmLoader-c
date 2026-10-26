@@ -31,11 +31,14 @@ its ecosystem.
   URL. Consumers' `vcpkg-configuration.json` registry `repository` should use the org URL, with a
   baseline at or after the `registry: … port-version 2` commit once it is pushed.
 
-## Current state — v1.1.0
+## Current state — v1.1.1
 
 The header-only loader is implemented and passes the full reference suite. Released tags: `v1.0.0`
-(`4da2c0b`, 2026-06-17), `v1.1.0` (`3aea7bd`, 2026-06-24; adds the convenience call layer), vcpkg
-port-version 2 since 2026-10-20. Working tree:
+(`4da2c0b`, 2026-06-17), `v1.1.0` (`3aea7bd`, 2026-06-24; adds the convenience call layer; vcpkg
+port-version 2 since 2026-10-20), `v1.1.1` (2026-10-26, owner: "bump and push"): the header is
+byte-identical to 1.1.0 (same sha512 pins); the release carries the workspace reference fixtures
+and the 34-assertion suite (SPEC §10 tested); first release through `make bump` (floor patch,
+v1.1.0's tests green). Working tree:
 
 - `universal_wasm_loader.h` — the single-header library (public API + `UWL_IMPLEMENTATION` body).
 - `tests/spec_tests.c` — the SPEC §8 reference suite (34 assertions since 2026-10-26).

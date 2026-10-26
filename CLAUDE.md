@@ -33,5 +33,5 @@ Distributed through the repo's own vcpkg registry (`ports/`, `versions/`).
    the header from the `v<version>` tag, so a tag IS a release; CI (`vcpkg-release.yml`) validates
    the port but does not run the C tests.
 
-**Current state:** v1.1.0 (vcpkg port-version 2), 29/29. GitHub:
+**Current state:** v1.1.1 (2026-10-26; header unchanged from 1.1.0), 34/34. GitHub:
 `synapticforge1/universalWasmLoader-c`.
