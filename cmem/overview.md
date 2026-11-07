@@ -41,10 +41,12 @@ and the 34-assertion suite (SPEC §10 tested); first release through `make bump`
 v1.1.0's tests green). `v1.1.2` (2026-11-07, owner: "push and release"): the H29 / S8 fix — typed
 accessors fail on a result-kind mismatch instead of reading the wrong union member; new header
 sha512 (recomputed by `bump` from the committed blob and re-derived independently); 43 assertions;
-floor patch vs v1.1.1, v1.1.1's 34 tests green. Working tree:
+floor patch vs v1.1.1, v1.1.1's 34 tests green. **Since 2026-11-07, `main` carries SPEC 4.0.0
+(C29; see § SPEC 4.0.0 below), not yet released.** It is a major, so the next release is 2.0.0,
+through `make bump KIND=major` when the owner says so. Working tree:
 
 - `universal_wasm_loader.h` — the single-header library (public API + `UWL_IMPLEMENTATION` body).
-- `tests/spec_tests.c` — the SPEC §8 reference suite (43 assertions since 2026-11-07).
+- `tests/spec_tests.c` — the SPEC §8 reference suite (84 assertions since 2026-11-07, C29).
 - `tests/*.wasm` + `tests/*.wit` + `tests/init_check.{wat,wasm}` + `tests/fixtures.json` — the
   workspace reference set, copied unmodified from loader-js on 2026-10-26 (stamp: wasmtk
   `4a5c3cf668d`; see Tests). `spec_tests.c` exercises `math_50`, `booleans_50`, `strings_50`,
@@ -104,22 +106,51 @@ Idiomatic C equivalents of the reference loader's API. All in `universal_wasm_lo
 import name (e.g. `"envMul"`). Imports are defined into a `wasmtime_linker_t` under the `env`
 namespace using the underscore form of the WIT name (`env-mul` → `env_mul`). A single trampoline
 (`uwl__import_trampoline`) decodes args (strings read from caller memory via
-`wasmtime_caller_export_get("memory")`), calls the user fn, and encodes the result. Remaining
-unsatisfied imports are bound to traps (`wasmtime_linker_define_unknown_imports_as_traps`) so
-pure-compute modules and partial-import modules still instantiate.
+`wasmtime_caller_export_get("memory")`), calls the user fn, checks and encodes the result. Imports
+the `.wit` does not declare (WASI aside), and every import of a raw module, are bound to traps
+(`wasmtime_linker_define_unknown_imports_as_traps`), so those modules still instantiate.
 
-**Measured behaviour the SPEC does not settle (workspace H29, 2026-11-07; recorded, NOT changed —
-the owner / -js classify):**
-- **S9, a WIT import with no host callback:** the trampoline returns `uwl_void()`, encoded as 0.
-  `imports_50` loaded with NO callbacks loads, and `scale(3,4)` / `combine(10,7)` return `0` with no
-  error (SPEC §4 is silent; same as `abi.js` and -v).
-- **S10 second half, the `.wit` fallback:** the `.wit` is read from the filesystem
-  (`uwl__read_file`); ANY read failure (absent, unreadable) and a `.wit` that EXISTS but fails to
-  parse both fall back silently to raw mode — a malformed `math_50.wit` loads, and a later typed
-  call reports only "convenience calls require a companion .wit". Same class as -dotnet /
-  -jvm / -py; awaiting the SPEC §63 decision.
-- **S10 first half (HTTP masking, timeouts): not applicable** — the header has no HTTP path
-  (file paths only; see Known gaps, URL loading).
+### SPEC 4.0.0 "loud failures" (workspace C29, implemented 2026-11-07 on `main`, unreleased)
+
+The owner decided H29's open questions as SPEC 4.0.0 (`-js/SPEC.md`, released with loader-js
+2.0.0). What this header now does, with the 1.1.2 behaviour it replaces (measured for H29):
+
+- **§2, only an absent `.wit` is raw.** The `.wit` is read FIRST. `ENOENT` → raw; a path not ending
+  in `.wasm` has no companion (1.1.2 looked for `<path>.wit`). Any other read failure fails the load
+  (`cannot read .wit '…': <strerror>`). Reads go in chunks, not via `ftell`, so a directory fails
+  on Linux too (`fopen` succeeds there, `fread` fails `EISDIR`); on Windows `fopen` gives `EACCES`.
+  1.1.2: every read failure → raw, silently.
+- **§2, strict parsing.** `uwl__parse_wit` is a port of -js `wit-parser.js` with the same messages
+  (`invalid .wit '<path>': malformed parameter …`, `unsupported WIT type "u32" …`,
+  `duplicate export add`, `unterminated WIT statement (missing ";")`, `not a WIT world: …`). After
+  instantiation, a WIT export the module lacks fails the load, as it does in -js (`… does not export:
+  nope (WIT "nope")`). 1.1.2: a lenient `strstr` scan; an unknown type read as `s32`, a malformed
+  parameter dropped, garbage → an empty world → raw mode.
+- **§4, every WIT import needs a callback.** `uwl__bind_imports` runs before the `.wasm` is read and
+  names every missing one; an entry with a `NULL` fn counts as missing. A `string`-result import is
+  refused there too. 1.1.2: S9, the trampoline returned `uwl_void()` → 0, silently.
+- **§4, the callback's return kind.** It must be the WIT result's kind exactly. Otherwise the
+  trampoline returns a `wasmtime_trap_new` naming the callback, the import, the result type and the
+  value, which reaches the `uwl_call` of the export. A void import ignores the value. A string
+  argument with no memory, or out of bounds, traps too (1.1.2 passed `""`). 1.1.2 read the union as
+  the wrong member: a `uwl_f64(2.9)` for an `s32` result gave the double's low bits.
+- **§4, typed-call arguments.** `uwl_call` with a `.wit` checks each `args[i].kind` against the
+  parameter and refuses a NULL string, naming the export and the parameter (names are now kept:
+  `uwl_witfunc_t.pnames`). The convenience calls read varargs by the WIT type, so a kind mismatch
+  cannot be detected there (C varargs carry no type), but a NULL `const char *` is refused. 1.1.2
+  read the wrong union member.
+- **§4, the result-kind accessors:** already done in 1.1.2 (`83fbeda`, below). `uwl_call_void`
+  still discards any result, because it returns no value that could be mistaken for one.
+- **§11, the time limit and cancellation: not applicable.** The header reads local files only (no
+  http path), and §11 applies only to http(s) fetches. So there is no `options` parameter, and the
+  public surface keeps its 52 symbols. Revisit if URL loading is ever added.
+
+Inverted: the new suite (84) on the 1.1.2 header → **45 passed, 39 failed**, exactly the new
+negative checks. The two new checks still green there are `add(1)` (1.1.2 already checked the
+count) and the accepted-forms check (comments / `package` / CRLF / trailing comma). It is a MAJOR
+for this port: each item refuses input 1.x accepted. `compat` on the behaviour commit alone says
+floor patch, because v1.1.2's tests are all conformant input; the SPEC line in the header moves the
+floor to major.
 
 ### Typed accessors check the result kind (H29 / S8, fixed 2026-11-07)
 
@@ -146,8 +177,16 @@ found i32`); results decode by the wasm valkind (raw `multiply(2.5, 4.0)` → 10
 
 ## Tests
 
-`make test` → builds `tests/spec_tests.c` and runs it: **43 passed, 0 failed** (29 until
-2026-10-26, 34 until 2026-11-07). `test_result_kinds` (H29 / S8, 9 checks): raw `multiply` on a
+`make test` → builds `tests/spec_tests.c` and runs it: **84 passed, 0 failed** (29 until
+2026-10-26, 34 and then 43 on 2026-11-07, 84 since C29 the same day). The C29 tests are SPEC §8
+"Refusals" as they apply to C: `test_wit_absent_vs_failed` (a path with no `.wasm` suffix → raw;
+a `.wit` that is a directory → refused; a bad `.wit` with no `.wasm` → the `.wit`'s fault, so it is
+read first), `test_wit_parsing` (ten malformed `.wit` beside a copy of `math_50.wasm`, each refused
+naming the `.wit` and the fault, plus one accepted form), `test_import_refusals` (no / partial /
+NULL-fn callbacks; a `string`-result import; `envAdd` returning void, f64, bool, string, s64), and
+`test_typed_args` (seven wrong-kind / wrong-count `uwl_call`s, and `call_str(greet, NULL)`). They
+write scratch files into `tests/` and remove them. Not ported from -js: async callbacks (C has
+none) and the http rows (no http path). `test_result_kinds` (H29 / S8, 9 checks): raw `multiply` on a
 `.wit`-less copy (`tests/raw_math_50.wasm`, written and removed by the test) → 10.0, i32 args
 refused; four typed accessors on the wrong kind → sentinel + last error; a matching call clears
 it. Inverted: the same tests on the pre-fix header → 40 passed, 3 failed (exactly the
@@ -218,8 +257,17 @@ re-verify; never edit them here.
 ## Known gaps / not yet done
 
 - **Host import callbacks returning `string`** are not supported (would require allocating into WASM
-  memory from the trampoline; no fixture needs it). Numeric/bool import returns work.
-- **URL loading** (the JS/`-rs` `http(s)://` path) is not implemented — file paths only.
+  memory from the trampoline; no fixture needs it). Since C29 such an import is REFUSED at load
+  (SPEC 4.0.0 §4), not silently mis-encoded. Numeric/bool import returns work.
+- **URL loading** (the JS/`-rs` `http(s)://` path) is not implemented — file paths only. Adding it
+  would bring SPEC §11 (time limit, cancellation, one request per file) and an `options` parameter.
+- **C++ compiling of the implementation is checked by hand only.** Until 2026-11-07 the
+  `UWL_IMPLEMENTATION` unit did not compile as C++ (measured with `zig c++ -fsyntax-only` on the
+  1.1.2 header: 3 errors, each a `goto fail` in `uwl_import` that crosses an initialised
+  declaration), although the header names C++ consumers. Fixed with C29: declarations come before
+  the first `goto`. The same check is now clean, with `-Wall -Wextra` and no diagnostics from the
+  header. Zig's own `-fsyntax-only` cache-rename noise is unrelated. No test or CI step compiles it
+  as C++; add one to `make test` if it regresses.
 - **Thread-safe pool** (blocking acquire) — the C pool is single-threaded; a future revision could
   add mutex/condvar gating behind a compile flag.
 - **vcpkg port** validated locally on `x64-mingw-dynamic` (2026-06-17). CI (`.github/workflows/vcpkg-release.yml`)
@@ -233,7 +281,7 @@ re-verify; never edit them here.
   `main` it runs `validate` (port files, surface check, gate self-test) only. On a tag, `compat`
   builds and runs the PREVIOUS tag's tests against the new header on Linux: first run 2026-10-26
   (run `40382759953`, `v1.1.1`: all jobs green, so `make fetch` + `zig cc` + a suite now pass
-  natively on x86_64-linux — v1.1.0's 29 tests). The current 43 assertions (incl. SPEC §10) are
+  natively on x86_64-linux — v1.1.0's 29 tests). The current 84 assertions (incl. SPEC §10 and the 4.0.0 refusals) are
   verified only locally (x86_64-mingw). A native macOS build/run has never happened (link-only
   cross-checks; the `arm64-osx` install job builds the consumer example, it runs no suite). Fix: a
   `make fetch` + `make clean test` job on Linux/macOS/Windows.
@@ -265,7 +313,11 @@ and the letters in `../../../cmem/handoffs.md`; the workspace sweep reads this s
 - **H29 (three behaviour checks, S8 / S9 / S10)** — answered 2026-11-07: S8's typed-accessor
   defect FIXED (see § Typed accessors check the result kind), raw mode already correct; S9 and the
   `.wit` fallback measured and recorded, not changed (owner / -js); S10's HTTP half n/a (no HTTP
-  path). Fix `83fbeda`, released in **1.1.2** (2026-11-07).
+  path). Fix `83fbeda`, released in **1.1.2** (2026-11-07). S9 and the `.wit` fallback were then
+  decided as SPEC 4.0.0 and carried here by C29.
+- **C29 (re-align to SPEC 4.0.0; from loader-js)** — implemented 2026-11-07 on `main`, unreleased
+  (see § SPEC 4.0.0): items (1) to (4) done, (5) n/a (no http). Version decision: MAJOR, 2.0.0, when
+  the owner releases. Answered in the ledger; loader-js verifies and closes.
 - **H28 (maintainer address in one `cmem/` note; wabt-ts / binaryen-ts retired)** — record-only,
   nothing to change: this repo's history and commits use noreply (H19), it carries no contact note,
   and no tracked file cites either retired repo (★ rule tags name them as origins, not locations).

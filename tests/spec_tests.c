@@ -7,12 +7,27 @@
  * _str), which reads native C args per the export's WIT signature and reports
  * failures via uwl_last_error().
  */
+#if !defined(_WIN32) && !defined(_POSIX_C_SOURCE)
+#define _POSIX_C_SOURCE 200809L /* mkdir / rmdir under -std=c11 */
+#endif
+
 #define UWL_IMPLEMENTATION
 #include "../universal_wasm_loader.h"
 
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef _WIN32
+#include <direct.h>
+#define MKDIR(p) _mkdir(p)
+#define RMDIR(p) _rmdir(p)
+#else
+#include <sys/stat.h>
+#include <unistd.h>
+#define MKDIR(p) mkdir(p, 0755)
+#define RMDIR(p) rmdir(p)
+#endif
 
 static int g_pass = 0, g_fail = 0;
 
@@ -180,6 +195,214 @@ static void test_result_kinds(void) {
     uwl_free(m);
 }
 
+/* ── SPEC 4.0.0 §8 "Refusals" (workspace C29) ─────────────────────────────
+ * Scratch files are written into tests/ next to the fixtures and removed. */
+
+static int write_text(const char *path, const char *text) {
+    FILE *f = fopen(path, "wb");
+    if (!f) return 0;
+    size_t n = strlen(text);
+    int ok = fwrite(text, 1, n, f) == n;
+    return fclose(f) == 0 && ok;
+}
+
+/* uwl_import that must FAIL; returns the error (caller frees) or NULL if it loaded. */
+static char *load_fails(const char *path, const uwl_host_callback_t *cbs, size_t ncbs) {
+    char *err = NULL;
+    uwl_module_t *m = uwl_import(path, cbs, ncbs, &err);
+    if (m) { uwl_free(m); return NULL; }
+    return err ? err : uwl__strdup("(no message)");
+}
+
+static int has(const char *s, const char *needle) { return s && strstr(s, needle) != NULL; }
+
+/* §2 absent versus failed; the .wit is read before the .wasm. */
+static void test_wit_absent_vs_failed(void) {
+    printf("SPEC 4.0.0 §2 — only an absent .wit is raw; the .wit is read first\n");
+
+    /* No .wasm suffix: no companion, even with a (wrong) `<path>.wit` beside it. */
+    const char *bin = "tests/nosuffix_math.bin", *binwit = "tests/nosuffix_math.bin.wit";
+    copy_file(FX("math_50.wasm"), bin);
+    write_text(binwit, "world w { export multiply: func(a: s32, b: s32) -> s32; }\n");
+    char *err = NULL;
+    uwl_module_t *r = uwl_import(bin, NULL, 0, &err);
+    uwl_val_t a[2] = { uwl_f64(2.5), uwl_f64(4.0) }, out = uwl_void();
+    int rc = r ? uwl_call(r, "multiply", a, 2, &out, &err) : -1;
+    CHECK(rc == 0 && out.kind == UWL_F64 && fabs(uwl_as_f64(out) - 10.0) < 1e-9,
+          "a path not ending in .wasm loads raw (no '<path>.wit' companion)");
+    if (r) uwl_free(r);
+    uwl_string_free(err); err = NULL;
+    remove(bin); remove(binwit);
+
+    /* A .wit that exists but cannot be read (a directory) fails the load. */
+    const char *dw = "tests/dir_math.wasm", *dd = "tests/dir_math.wit";
+    copy_file(FX("math_50.wasm"), dw);
+    MKDIR(dd);
+    err = load_fails(dw, NULL, 0);
+    CHECK(has(err, "dir_math.wit"), "an unreadable .wit (a directory) fails the load, naming it");
+    uwl_string_free(err);
+    RMDIR(dd); remove(dw);
+
+    /* A bad .wit with NO .wasm: the .wit's fault is reported, so it was read first. */
+    const char *ow = "tests/order_math.wit";
+    write_text(ow, "world w { export add: func(a: u32, b: s32) -> s32; }\n");
+    err = load_fails("tests/order_math.wasm", NULL, 0);
+    CHECK(has(err, "order_math.wit") && has(err, "u32") && !has(err, "failed to read"),
+          "the .wit is checked before the .wasm is read");
+    uwl_string_free(err);
+    remove(ow);
+}
+
+/* §2 strict parsing, beside a real math_50.wasm. */
+static void test_wit_parsing(void) {
+    printf("SPEC 4.0.0 §2 — a .wit that does not parse fails the load\n");
+    const char *w = "tests/bad_math.wasm", *wit = "tests/bad_math.wit";
+    copy_file(FX("math_50.wasm"), w);
+    static const struct { const char *src, *fault, *label; } bad[] = {
+        { "world m { export add: func(a: s32 b: s32) -> s32; }", "malformed parameter", "func(a: s32 b: s32)" },
+        { "world m { export add: func(a: u32, b: s32) -> s32; }", "unsupported WIT type \"u32\"", "u32 is not read as s32" },
+        { "world m { export add: func(a: s32, b: s32) -> list<u8>; }", "unsupported WIT type", "list<u8> result" },
+        { "", "it is empty", "an empty .wit" },
+        { "world m { export add: func(a: s32, b: s32) -> s32; } extra", "not a WIT world", "text outside the world" },
+        { "world m { resource r; }", "unsupported or malformed WIT statement", "a non-function statement" },
+        { "world m { export add: func(a: s32, a: s32) -> s32; }", "duplicate parameter", "a duplicate parameter" },
+        { "world m { export add: func(a: s32, b: s32) -> s32; export add: func(a: s32, b: s32) -> s32; }",
+          "duplicate export add", "a duplicate export" },
+        { "world m { export add: func(a: s32, b: s32) -> s32 }", "missing \";\"", "a missing ';'" },
+        { "world m { export add: func(a: s32, b: s32) -> s32; export nope: func() -> s32; }",
+          "does not export: nope", "a WIT export the module lacks" },
+    };
+    for (size_t i = 0; i < sizeof(bad) / sizeof(bad[0]); i++) {
+        write_text(wit, bad[i].src);
+        char *err = load_fails(w, NULL, 0);
+        char msg[160];
+        snprintf(msg, sizeof(msg), "refused: %s", bad[i].label);
+        CHECK(has(err, "bad_math.wit") || has(err, "nope"), msg);
+        CHECK(has(err, bad[i].fault), "  ...and the error names the fault");
+        if (err && !has(err, bad[i].fault)) printf("    -> %s\n", err);
+        uwl_string_free(err);
+    }
+
+    /* The accepted forms: comments, `package`, CRLF, a trailing comma, a subset of exports. */
+    write_text(wit, "// gen\r\npackage local:x-1;\r\nworld math-50 {\r\n"
+                    "  export add: func(a: s32, b: s32,) -> s32; // tail\r\n}\r\n");
+    uwl_module_t *m = load("bad_math.wasm", NULL, 0);
+    CHECK(m && uwl_call_i32(m, "add", 3, 4) == 7, "comments, package, CRLF, trailing comma parse; add(3,4)==7");
+    if (m) uwl_free(m);
+    remove(wit); remove(w);
+}
+
+static uwl_val_t mul_ok(const uwl_val_t *args, size_t n, void *ud) {
+    (void)n; (void)ud;
+    return uwl_f64(uwl_as_f64(args[0]) * uwl_as_f64(args[1]));
+}
+
+/* envAdd returning the wrong kind; userdata picks which. */
+static uwl_val_t add_bad(const uwl_val_t *args, size_t n, void *ud) {
+    (void)args; (void)n;
+    switch (*(const int *)ud) {
+        case 0:  return uwl_void();
+        case 1:  return uwl_f64(2.9);
+        case 2:  return uwl_bool(1);
+        case 3:  return uwl_str("17");
+        default: return uwl_i64(17);
+    }
+}
+
+/* §4 every WIT import needs a callback; its return value is checked. */
+static void test_import_refusals(void) {
+    printf("SPEC 4.0.0 §4 — host callbacks: all required, return kind checked\n");
+    char *err = load_fails(FX("imports_50.wasm"), NULL, 0);
+    CHECK(has(err, "envMul") && has(err, "envAdd"), "imports_50 with no callbacks: refused naming envMul and envAdd");
+    uwl_string_free(err);
+
+    uwl_host_callback_t only_mul[1] = { { "envMul", mul_ok, NULL } };
+    err = load_fails(FX("imports_50.wasm"), only_mul, 1);
+    CHECK(has(err, "envAdd") && !has(err, "envMul"), "imports_50 with only envMul: refused naming envAdd");
+    uwl_string_free(err);
+
+    uwl_host_callback_t null_add[2] = { { "envMul", mul_ok, NULL }, { "envAdd", NULL, NULL } };
+    err = load_fails(FX("imports_50.wasm"), null_add, 2);
+    CHECK(has(err, "envAdd"), "an entry with a NULL fn counts as missing");
+    uwl_string_free(err);
+
+    /* A string-result import, with no .wasm present: refused at load, before the .wasm. */
+    const char *sw = "tests/strres_imports.wit";
+    write_text(sw, "world imports-50 {\n  import env-mul: func(p0: f64, p1: f64) -> string;\n"
+                   "  import env-add: func(p0: s32, p1: s32) -> s32;\n"
+                   "  export scale: func(x: f64, factor: f64) -> f64;\n}\n");
+    uwl_host_callback_t both[2] = { { "envMul", mul_ok, NULL }, { "envAdd", mul_ok, NULL } };
+    err = load_fails("tests/strres_imports.wasm", both, 2);
+    CHECK(has(err, "envMul") && has(err, "string") && !has(err, "failed to read"),
+          "an import with a string result is refused before the .wasm is read");
+    uwl_string_free(err);
+    remove(sw);
+
+    static const char *shown[] = { "no value", "2.9 (f64)", "true (bool)", "\"17\" (string)", "17 (s64)" };
+    static const int sel[] = { 0, 1, 2, 3, 4 };
+    for (int i = 0; i < 5; i++) {
+        uwl_host_callback_t cbs[2] = { { "envMul", mul_ok, NULL }, { "envAdd", add_bad, (void *)&sel[i] } };
+        uwl_module_t *m = load("imports_50.wasm", cbs, 2);
+        uwl_val_t a[2] = { uwl_i32(10), uwl_i32(7) }, out = uwl_void();
+        err = NULL;
+        int rc = m ? uwl_call(m, "combine", a, 2, &out, &err) : 0;
+        char msg[160];
+        snprintf(msg, sizeof(msg), "envAdd returning %s: combine(10,7) fails naming it", shown[i]);
+        CHECK(m && rc != 0 && has(err, "envAdd") && has(err, "env-add") && has(err, "s32") && has(err, shown[i]), msg);
+        if (m && rc != 0 && !has(err, shown[i])) printf("    -> %s\n", err ? err : "?");
+        uwl_val_free(&out);
+        uwl_string_free(err);
+        if (m) uwl_free(m);
+    }
+}
+
+/* §4 typed calls check the count and each argument's kind; nothing is coerced. */
+static void test_typed_args(void) {
+    printf("SPEC 4.0.0 §4 — typed-call arguments are checked, never coerced\n");
+    uwl_module_t *m = load("math_50.wasm", NULL, 0);
+    uwl_module_t *s = load("strings_50.wasm", NULL, 0);
+    uwl_module_t *b = load("booleans_50.wasm", NULL, 0);
+    if (!m || !s || !b) { CHECK(0, "math_50 / strings_50 / booleans_50 load"); goto out; }
+    static const struct { int mod; const char *fn; size_t n; int k0, k1; const char *names, *label; } cases[] = {
+        { 0, "add",        2, UWL_STR,  UWL_I32, "'a'",    "add(\"x\", 1)" },
+        { 0, "add",        2, UWL_F64,  UWL_I32, "'a'",    "add(2.7, 1)" },
+        { 0, "add",        2, UWL_I32,  UWL_I64, "'b'",    "add(1, s64 1)" },
+        { 0, "add",        1, UWL_I32,  0,       "expects 2", "add(1)" },
+        { 1, "greet",      1, UWL_I32,  0,       "'name'", "greet(42)" },
+        { 2, "isEven",     1, UWL_STR,  0,       "'n'",    "isEven(\"4\")" },
+        { 2, "isPositive", 1, UWL_BOOL, 0,       "'x'",    "isPositive(true)" },
+    };
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        uwl_val_t a[2];
+        int kinds[2] = { cases[i].k0, cases[i].k1 };
+        for (int j = 0; j < 2; j++) {
+            switch (kinds[j]) {
+                case UWL_STR:  a[j] = uwl_str("x"); break;
+                case UWL_F64:  a[j] = uwl_f64(2.7); break;
+                case UWL_I64:  a[j] = uwl_i64(1); break;
+                case UWL_BOOL: a[j] = uwl_bool(1); break;
+                default:       a[j] = uwl_i32(1); break;
+            }
+        }
+        uwl_module_t *mod = cases[i].mod == 0 ? m : cases[i].mod == 1 ? s : b;
+        uwl_val_t out = uwl_void();
+        char *err = NULL;
+        int rc = uwl_call(mod, cases[i].fn, a, cases[i].n, &out, &err);
+        char msg[160];
+        snprintf(msg, sizeof(msg), "%s refused, naming the export and %s", cases[i].label, cases[i].names);
+        CHECK(rc != 0 && has(err, cases[i].fn) && has(err, cases[i].names), msg);
+        uwl_val_free(&out);
+        uwl_string_free(err);
+        uwl_val_free(&a[0]); uwl_val_free(&a[1]);
+    }
+    CHECK(uwl_call_str(s, "greet", (const char *)NULL) == NULL && has(uwl_last_error(), "NULL"),
+          "call_str greet(NULL): refused, not sent as \"\"");
+out:
+    if (m) uwl_free(m);
+    if (s) uwl_free(s);
+    if (b) uwl_free(b);
+}
+
 static void test_singleton(void) {
     printf("singleton — caches one instance\n");
     uwl_singleton_t *s = uwl_singleton_new(FX("math_50.wasm"), NULL, 0);
@@ -228,6 +451,10 @@ int main(void) {
     test_initialize();
     test_wasi_io();
     test_result_kinds();
+    test_wit_absent_vs_failed();
+    test_wit_parsing();
+    test_import_refusals();
+    test_typed_args();
     test_singleton();
     test_pool();
     test_version();

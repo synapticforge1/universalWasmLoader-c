@@ -17,8 +17,9 @@ ABI — Zig, V, and Julia.
 #include "universal_wasm_loader.h"
 
 int main(void) {
-    uwl_module_t *m = uwl_import("math_50.wasm", NULL, 0, NULL);
-    if (!m) { fprintf(stderr, "%s\n", uwl_last_error()); return 1; }
+    char *err = NULL;
+    uwl_module_t *m = uwl_import("math_50.wasm", NULL, 0, &err);
+    if (!m) { fprintf(stderr, "%s\n", err); uwl_string_free(err); return 1; }
 
     int r = uwl_call_i32(m, "add", 3, 4);          // 7
     printf("add(3, 4) = %d\n", r);
@@ -39,7 +40,22 @@ pass plain C values. On failure they return `0`/`NULL` and set a thread-local er
 `uwl_call_i32` on an `f64` export) is such a failure, so check `uwl_last_error()` to tell a real `0`
 from an error. They require a companion `.wit`; for raw modules use the lower-level
 `uwl_call(m, name, args, nargs, &out, &err)` with explicit `uwl_val_t` values (see
-[API reference](#api-reference)).
+[API reference](#api-reference)). With a `.wit`, `uwl_call` checks the argument count and each
+argument's kind against the WIT signature and coerces nothing: `uwl_i32(2)` for an `f64` parameter
+is an error naming the export and the parameter, not `2.0`.
+
+## The companion `.wit`
+
+`uwl_import("dir/mod.wasm", …)` reads `dir/mod.wit` **before** the `.wasm`:
+
+- **Absent** — the file does not exist, or the path does not end in `.wasm` — gives raw exports.
+- **Anything else fails the load** with an error naming the `.wit` and the reason: a file that exists
+  but cannot be read, and a `.wit` that does not parse. The accepted form is the subset `wasmtk`
+  writes (SPEC §2 "Parsing"): an optional `package …;`, one `world name { … }` holding only
+  `import` / `export` function statements, `//` comments, and the types `s32` `s64` `f32` `f64`
+  `bool` `string`. `u32` is not read as `s32`; a parameter without `name: type`, a duplicate name or
+  a missing `;` is an error.
+- After instantiation, every WIT `export` must exist in the module, or the load fails naming it.
 
 ## Strings
 
@@ -56,21 +72,31 @@ hands you an owned heap string — free it with `uwl_string_free`.
 
 ## Host imports
 
-Provide host callbacks (keyed by the **camelCase** WIT import name) for modules that import functions:
+Provide host callbacks (keyed by the **camelCase** WIT import name) for modules that import functions.
+**Every WIT import needs one.** A missing callback fails the load, naming all of the missing ones; an
+entry with a `NULL` `fn` counts as missing. A WIT import with a `string` result is refused at load too,
+because it is not supported.
 
 ```c
 static uwl_val_t env_mul(const uwl_val_t *a, size_t n, void *ud) {
     return uwl_f64(uwl_as_f64(a[0]) * uwl_as_f64(a[1]));
 }
+static uwl_val_t env_add(const uwl_val_t *a, size_t n, void *ud) {
+    return uwl_i32(uwl_as_i32(a[0]) + uwl_as_i32(a[1]));
+}
 
-uwl_host_callback_t cbs[] = { { "envMul", env_mul, NULL } };
-uwl_module_t *m = uwl_import("imports.wasm", cbs, 1, NULL);
+uwl_host_callback_t cbs[] = { { "envMul", env_mul, NULL }, { "envAdd", env_add, NULL } };
+uwl_module_t *m = uwl_import("imports_50.wasm", cbs, 2, &err);
 
 double s = uwl_call_f64(m, "scale", 3.0, 4.0);   // module calls back into envMul
 ```
 
 Host callbacks still receive and return `uwl_val_t` (the callee side inspects arguments
-dynamically); only the export-call side gains the typed convenience wrappers.
+dynamically); only the export-call side gains the typed convenience wrappers. The returned value must
+be the kind of the import's WIT result: `uwl_i32` for `s32`, `uwl_bool` for `bool`, and so on. Nothing
+is coerced. Any other kind, including `uwl_void()`, makes the export call that reached the callback
+fail, naming the callback, the import, the result type and the value. For an import with no result,
+the returned value is ignored.
 
 ## Version pinning
 
@@ -168,7 +194,7 @@ least one minor release first and listed below.
 
 | Version | Change | Migration |
 | --- | --- | --- |
-| — | None since 1.0.0. | — |
+| 2.0.0 (next release) | SPEC 4.0.0, "loud failures". Each of these loads or calls succeeded on 1.x: (1) a `.wit` that exists but cannot be read, or does not parse, now fails the load instead of giving raw exports; so does a WIT export the module lacks. (2) A path not ending in `.wasm` no longer looks for `<path>.wit`. (3) Every WIT import needs a callback, and a `string`-result import is refused, both at load; before, a missing callback returned `0`. (4) A callback's return kind must match the import's WIT result; before, it was read as the wrong union member. (5) Typed `uwl_call` refuses an argument of the wrong kind (before, it was read as the wrong member), and the convenience calls refuse a `NULL` string (before, it was sent as `""`). | Fix the `.wit`, or delete it to load raw. Pass a callback for every WIT import. Return the WIT result's kind. Build arguments with the constructor matching each WIT parameter. Raw mode is unchanged. |
 
 ## License
 
