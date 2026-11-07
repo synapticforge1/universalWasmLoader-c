@@ -20,7 +20,7 @@ Distributed through the repo's own vcpkg registry (`ports/`, `versions/`).
 
 - **"update the project memory"** — revise the `cmem/` files; sync `README.md` only where
   user-relevant.
-- **"look for code issues"** — the comprehensive audit; keep `make clean test` at 34/34.
+- **"look for code issues"** — the comprehensive audit; keep `make clean test` at 43/43.
 
 ## Three things that bite immediately
 
@@ -33,5 +33,5 @@ Distributed through the repo's own vcpkg registry (`ports/`, `versions/`).
    the header from the `v<version>` tag, so a tag IS a release; CI (`vcpkg-release.yml`) validates
    the port but does not run the C tests.
 
-**Current state:** v1.1.1 (2026-10-26; header unchanged from 1.1.0), 34/34. GitHub:
+**Current state:** v1.1.1 released (2026-10-26); `main` adds the H29 typed-accessor fix (unreleased), 43/43. GitHub:
 `synapticforge1/universalWasmLoader-c`.

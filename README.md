@@ -35,7 +35,9 @@ The typed convenience calls (`uwl_call_i32` / `_i64` / `_f32` / `_f64` / `_bool`
 read native C arguments and return a native C result — the C analog of the reference loader's
 `m.add(3, 4)`. Each argument is read with the correct type from the export's WIT signature, so you
 pass plain C values. On failure they return `0`/`NULL` and set a thread-local error you read with
-`uwl_last_error()`. They require a companion `.wit`; for raw modules use the lower-level
+`uwl_last_error()`; calling an accessor whose type does not match the export's WIT result (e.g.
+`uwl_call_i32` on an `f64` export) is such a failure, so check `uwl_last_error()` to tell a real `0`
+from an error. They require a companion `.wit`; for raw modules use the lower-level
 `uwl_call(m, name, args, nargs, &out, &err)` with explicit `uwl_val_t` values (see
 [API reference](#api-reference)).
 

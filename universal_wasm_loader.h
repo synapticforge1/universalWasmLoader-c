@@ -200,7 +200,10 @@ void uwl_free(uwl_module_t *m);
  * Errors do not use an out-parameter: on failure the call returns the sentinel
  * (0 / NULL) and sets the thread-local last error, retrievable with
  * #uwl_last_error. A successful call clears it. The result-type suffix must
- * match the export's WIT result type.
+ * match the export's WIT result type; a mismatch is such a failure (e.g.
+ * #uwl_call_i32 on an `f64` export returns 0 with the last error set); check
+ * #uwl_last_error to tell a real 0 from a failure. #uwl_call_void discards any
+ * result.
  */
 int32_t uwl_call_i32 (uwl_module_t *m, const char *name, ...);
 int64_t uwl_call_i64 (uwl_module_t *m, const char *name, ...);
@@ -1162,9 +1165,40 @@ static int uwl__call_va(uwl_module_t *m, const char *name, uwl_val_t *out, va_li
     return rc;
 }
 
+static const char *uwl__kind_name(uwl_kind_t k) {
+    switch (k) {
+        case UWL_VOID: return "void";
+        case UWL_I32:  return "s32";
+        case UWL_I64:  return "s64";
+        case UWL_F32:  return "f32";
+        case UWL_F64:  return "f64";
+        case UWL_BOOL: return "bool";
+        case UWL_STR:  return "string";
+    }
+    return "?";
+}
+
+/* uwl__call_va, then require the result kind the accessor reads: a mismatch is
+ * an error (sentinel + last error), never the union read as the wrong member
+ * (workspace H29 / S8: call_i32 on an f64 export returned 0, call_bool on an
+ * s32 export returned the integer). Returns 0 on success, -1 on failure. */
+static int uwl__call_expect(uwl_module_t *m, const char *name, uwl_kind_t want,
+                            uwl_val_t *out, va_list ap) {
+    int rc = uwl__call_va(m, name, out, ap);
+    if (rc == 0 && out->kind != want) {
+        char *e = NULL;
+        uwl__set_err(&e, "export '%s' returns %s, not %s", name,
+                     uwl__kind_name(out->kind), uwl__kind_name(want));
+        uwl__tls_set(e);
+        uwl_val_free(out);
+        return -1;
+    }
+    return rc;
+}
+
 int32_t uwl_call_i32(uwl_module_t *m, const char *name, ...) {
     va_list ap; va_start(ap, name);
-    uwl_val_t out; int rc = uwl__call_va(m, name, &out, ap);
+    uwl_val_t out; int rc = uwl__call_expect(m, name, UWL_I32, &out, ap);
     va_end(ap);
     int32_t r = (rc == 0) ? uwl_as_i32(out) : 0;
     uwl_val_free(&out);
@@ -1173,7 +1207,7 @@ int32_t uwl_call_i32(uwl_module_t *m, const char *name, ...) {
 
 int64_t uwl_call_i64(uwl_module_t *m, const char *name, ...) {
     va_list ap; va_start(ap, name);
-    uwl_val_t out; int rc = uwl__call_va(m, name, &out, ap);
+    uwl_val_t out; int rc = uwl__call_expect(m, name, UWL_I64, &out, ap);
     va_end(ap);
     int64_t r = (rc == 0) ? uwl_as_i64(out) : 0;
     uwl_val_free(&out);
@@ -1182,7 +1216,7 @@ int64_t uwl_call_i64(uwl_module_t *m, const char *name, ...) {
 
 float uwl_call_f32(uwl_module_t *m, const char *name, ...) {
     va_list ap; va_start(ap, name);
-    uwl_val_t out; int rc = uwl__call_va(m, name, &out, ap);
+    uwl_val_t out; int rc = uwl__call_expect(m, name, UWL_F32, &out, ap);
     va_end(ap);
     float r = (rc == 0) ? uwl_as_f32(out) : 0.0f;
     uwl_val_free(&out);
@@ -1191,7 +1225,7 @@ float uwl_call_f32(uwl_module_t *m, const char *name, ...) {
 
 double uwl_call_f64(uwl_module_t *m, const char *name, ...) {
     va_list ap; va_start(ap, name);
-    uwl_val_t out; int rc = uwl__call_va(m, name, &out, ap);
+    uwl_val_t out; int rc = uwl__call_expect(m, name, UWL_F64, &out, ap);
     va_end(ap);
     double r = (rc == 0) ? uwl_as_f64(out) : 0.0;
     uwl_val_free(&out);
@@ -1200,7 +1234,7 @@ double uwl_call_f64(uwl_module_t *m, const char *name, ...) {
 
 int uwl_call_bool(uwl_module_t *m, const char *name, ...) {
     va_list ap; va_start(ap, name);
-    uwl_val_t out; int rc = uwl__call_va(m, name, &out, ap);
+    uwl_val_t out; int rc = uwl__call_expect(m, name, UWL_BOOL, &out, ap);
     va_end(ap);
     int r = (rc == 0) ? uwl_as_bool(out) : 0;
     uwl_val_free(&out);

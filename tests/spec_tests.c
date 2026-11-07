@@ -132,6 +132,54 @@ static void test_wasi_io(void) {
     uwl_free(m);
 }
 
+/* Copy a fixture to `dst` so it loads without its companion .wit. */
+static int copy_file(const char *src, const char *dst) {
+    FILE *in = fopen(src, "rb"), *out = in ? fopen(dst, "wb") : NULL;
+    char buf[4096]; size_t n; int ok = (in && out);
+    while (ok && (n = fread(buf, 1, sizeof(buf), in)) > 0) ok = (fwrite(buf, 1, n, out) == n);
+    if (in) fclose(in);
+    if (out) fclose(out);
+    return ok;
+}
+
+/* Workspace H29 / S8: raw mode encodes by the export's wasm signature (wasmtime
+ * checks each arg's kind), and a typed accessor whose result kind does not
+ * match the export fails loudly instead of reading the wrong union member. */
+static void test_result_kinds(void) {
+    printf("result kinds — raw f64 call; typed accessor mismatch is an error\n");
+    const char *raw = "tests/raw_math_50.wasm"; /* no raw_math_50.wit beside it */
+    CHECK(copy_file(FX("math_50.wasm"), raw), "copy math_50.wasm without its .wit");
+    char *err = NULL;
+    uwl_module_t *r = uwl_import(raw, NULL, 0, &err);
+    CHECK(r != NULL, "raw math_50 loads");
+    if (r) {
+        uwl_val_t a[2] = { uwl_f64(2.5), uwl_f64(4.0) }, out = uwl_void();
+        int rc = uwl_call(r, "multiply", a, 2, &out, &err);
+        CHECK(rc == 0 && out.kind == UWL_F64 && fabs(uwl_as_f64(out) - 10.0) < 1e-9,
+              "raw multiply(2.5,4.0)==10.0 as f64");
+        uwl_val_t b[2] = { uwl_i32(2), uwl_i32(4) };
+        rc = uwl_call(r, "multiply", b, 2, &out, &err);
+        CHECK(rc != 0, "raw multiply with i32 args is refused, not coerced");
+        uwl_string_free(err);
+        uwl_free(r);
+    } else uwl_string_free(err);
+    remove(raw);
+
+    uwl_module_t *m = load("math_50.wasm", NULL, 0);
+    if (!m) { CHECK(0, "math_50 loads"); return; }
+    CHECK(uwl_call_i32(m, "multiply", 2.5, 4.0) == 0 && uwl_last_error() != NULL,
+          "call_i32 on an f64 export: 0 with the last error set");
+    CHECK(uwl_call_f64(m, "add", 3, 4) == 0.0 && uwl_last_error() != NULL,
+          "call_f64 on an s32 export: 0.0 with the last error set");
+    CHECK(uwl_call_bool(m, "add", 3, 4) == 0 && uwl_last_error() != NULL,
+          "call_bool on an s32 export: 0 with the last error set");
+    CHECK(uwl_call_str(m, "add", 3, 4) == NULL && uwl_last_error() != NULL,
+          "call_str on an s32 export: NULL with the last error set");
+    CHECK(uwl_call_i32(m, "add", 3, 4) == 7 && uwl_last_error() == NULL,
+          "a matching call afterwards succeeds and clears the error");
+    uwl_free(m);
+}
+
 static void test_singleton(void) {
     printf("singleton — caches one instance\n");
     uwl_singleton_t *s = uwl_singleton_new(FX("math_50.wasm"), NULL, 0);
@@ -179,6 +227,7 @@ int main(void) {
     test_imports();
     test_initialize();
     test_wasi_io();
+    test_result_kinds();
     test_singleton();
     test_pool();
     test_version();

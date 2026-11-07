@@ -41,7 +41,7 @@ and the 34-assertion suite (SPEC §10 tested); first release through `make bump`
 v1.1.0's tests green). Working tree:
 
 - `universal_wasm_loader.h` — the single-header library (public API + `UWL_IMPLEMENTATION` body).
-- `tests/spec_tests.c` — the SPEC §8 reference suite (34 assertions since 2026-10-26).
+- `tests/spec_tests.c` — the SPEC §8 reference suite (43 assertions since 2026-11-07).
 - `tests/*.wasm` + `tests/*.wit` + `tests/init_check.{wat,wasm}` + `tests/fixtures.json` — the
   workspace reference set, copied unmodified from loader-js on 2026-10-26 (stamp: wasmtk
   `4a5c3cf668d`; see Tests). `spec_tests.c` exercises `math_50`, `booleans_50`, `strings_50`,
@@ -105,6 +105,29 @@ namespace using the underscore form of the WIT name (`env-mul` → `env_mul`). A
 unsatisfied imports are bound to traps (`wasmtime_linker_define_unknown_imports_as_traps`) so
 pure-compute modules and partial-import modules still instantiate.
 
+**Measured behaviour the SPEC does not settle (workspace H29, 2026-11-07; recorded, NOT changed —
+the owner / -js classify):**
+- **S9, a WIT import with no host callback:** the trampoline returns `uwl_void()`, encoded as 0.
+  `imports_50` loaded with NO callbacks loads, and `scale(3,4)` / `combine(10,7)` return `0` with no
+  error (SPEC §4 is silent; same as `abi.js` and -v).
+- **S10 second half, the `.wit` fallback:** the `.wit` is read from the filesystem
+  (`uwl__read_file`); ANY read failure (absent, unreadable) and a `.wit` that EXISTS but fails to
+  parse both fall back silently to raw mode — a malformed `math_50.wit` loads, and a later typed
+  call reports only "convenience calls require a companion .wit". Same class as -dotnet /
+  -jvm / -py; awaiting the SPEC §63 decision.
+- **S10 first half (HTTP masking, timeouts): not applicable** — the header has no HTTP path
+  (file paths only; see Known gaps, URL loading).
+
+### Typed accessors check the result kind (H29 / S8, fixed 2026-11-07)
+
+`uwl_call_i32/_i64/_f32/_f64/_bool` go through `uwl__call_expect`: a result kind that differs from
+the accessor's is an error (`export 'multiply' returns f64, not s32`; sentinel + last error).
+Before, the union was read as the wrong member, silently: measured on math_50, `call_i32(multiply,
+2.5, 4.0)` → 0, `call_f64(add, 3, 4)` → -1.16e-68, `call_bool(add, 3, 4)` → 7, all with NO error
+(`call_str` already errored). `uwl_call_void` still discards any result. Raw mode was already right:
+args carry their own kinds and wasmtime refuses a mismatch (`argument type mismatch … expected f64,
+found i32`); results decode by the wasm valkind (raw `multiply(2.5, 4.0)` → 10.0).
+
 ## Canonical ABI / SPEC conformance status — CONFORMANT to SPEC 3.0.0
 
 - **String PARAMS:** `cabi_realloc(0,0,1,len)` → write UTF-8 bytes into linear memory → pass
@@ -120,8 +143,12 @@ pure-compute modules and partial-import modules still instantiate.
 
 ## Tests
 
-`make test` → builds `tests/spec_tests.c` and runs it: **34 passed, 0 failed** (29 until
-2026-10-26). Covers all four `*_50` fixtures, SPEC §10 (`init_check`: `getValue()==99` through the
+`make test` → builds `tests/spec_tests.c` and runs it: **43 passed, 0 failed** (29 until
+2026-10-26, 34 until 2026-11-07). `test_result_kinds` (H29 / S8, 9 checks): raw `multiply` on a
+`.wit`-less copy (`tests/raw_math_50.wasm`, written and removed by the test) → 10.0, i32 args
+refused; four typed accessors on the wrong kind → sentinel + last error; a matching call clears
+it. Inverted: the same tests on the pre-fix header → 40 passed, 3 failed (exactly the
+`call_i32` / `call_f64` / `call_bool` mismatch checks). Covers all four `*_50` fixtures, SPEC §10 (`init_check`: `getValue()==99` through the
 raw `uwl_call` path proves `_initialize` ran; `wasi_io_50`: `logAndDouble(21)==42` proves the WASI
 context satisfied `fd_write` — the module's own `doubling` line appears on stdout), plus singleton,
 pool, and version-pin-rejected scenarios. Both §10 tests were inverted 2026-10-26 on a scratch
@@ -202,7 +229,7 @@ re-verify; never edit them here.
   `main` it runs `validate` (port files, surface check, gate self-test) only. On a tag, `compat`
   builds and runs the PREVIOUS tag's tests against the new header on Linux: first run 2026-10-26
   (run `40382759953`, `v1.1.1`: all jobs green, so `make fetch` + `zig cc` + a suite now pass
-  natively on x86_64-linux — v1.1.0's 29 tests). The current 34 assertions (incl. SPEC §10) are
+  natively on x86_64-linux — v1.1.0's 29 tests). The current 43 assertions (incl. SPEC §10) are
   verified only locally (x86_64-mingw). A native macOS build/run has never happened (link-only
   cross-checks; the `arm64-osx` install job builds the consumer example, it runs no suite). Fix: a
   `make fetch` + `make clean test` job on Linux/macOS/Windows.
@@ -211,7 +238,7 @@ re-verify; never edit them here.
   Owner, 2026-10-22: RECORD, do not add yet — a `tsc --noEmit` check would need `typescript` +
   Bun's types (a `package.json` in a C repo). Revisit if a script bug slips past the self-test.
 
-## Workspace letters — status for this repo (2026-10-26)
+## Workspace letters — status for this repo (2026-11-07)
 
 From the workspace ledger `../../../cmem/workspace-correspondence.md` (read first since 2026-10-26)
 and the letters in `../../../cmem/handoffs.md`; the workspace sweep reads this section.
@@ -231,6 +258,10 @@ and the letters in `../../../cmem/handoffs.md`; the workspace sweep reads this s
 - **H24 / H27 (★ re-copy, new stamp)** — done 2026-10-26: rule 5.2 re-copied, stamp now
   `Copied from synapticforge1/cmem/best-practices.md on 2026-10-26`; text check 0 differences
   ([best-practices.md](best-practices.md) § ★), including ★ 6.1's corrected id (C8).
+- **H29 (three behaviour checks, S8 / S9 / S10)** — answered 2026-11-07: S8's typed-accessor
+  defect FIXED (see § Typed accessors check the result kind), raw mode already correct; S9 and the
+  `.wit` fallback measured and recorded, not changed (owner / -js); S10's HTTP half n/a (no HTTP
+  path). Unreleased: the fix ships in the next patch when the owner says.
 - **H28 (maintainer address in one `cmem/` note; wabt-ts / binaryen-ts retired)** — record-only,
   nothing to change: this repo's history and commits use noreply (H19), it carries no contact note,
   and no tracked file cites either retired repo (★ rule tags name them as origins, not locations).
