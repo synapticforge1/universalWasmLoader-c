@@ -73,6 +73,9 @@ reads only the leading comment.
   native Linux `zig cc` build and run of a suite here (Zig 0.16.0 via `mlugg/setup-zig@v2`, Bun
   1.4.3 via `oven-sh/setup-bun@v2`): `compat.ts --release` = floor patch, v1.1.0's 29 tests against
   the 1.1.1 header. Read from the run's job conclusions (public API); the job log was not read.
+- Run `42391904762` on tag `v1.1.2` (`22f9eac`, 2026-11-07): all green again — `validate`,
+  `compat` (v1.1.1's 34 tests against the 1.1.2 header, Linux), `install` on the same three
+  triplets; `main`'s run `42391902045` green. Job conclusions read from the public API.
 - Still not covered: CI runs the PREVIOUS tag's tests, never the current `tests/spec_tests.c` (34
   since 2026-10-26) — see overview § Known gaps. The `validate` additions (surface `--check`,
   self-test) have run green on Linux since run `39804596951` (2026-10-22).

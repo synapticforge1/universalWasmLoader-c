@@ -226,7 +226,8 @@ re-verify; never edit them here.
   runs `validate` on every push/PR and real overlay-port installs on tags or manual dispatch. **Install
   VALIDATED 2026-10-20** (dispatch run `39518063717`, 1.1.0 port-version 2, downloads from the
   `synapticforge1` org URLs) on `x64-linux`, `x64-windows` (MSVC) and `arm64-osx`; again for
-  **1.1.1** on the tag push, 2026-10-26 (run `40382759953`, same three triplets, green). Not yet
+  **1.1.1** on the tag push, 2026-10-26 (run `40382759953`, same three triplets, green), and for
+  **1.1.2**, 2026-11-07 (run `42391904762`, green). Not yet
   install-tested: `x64-windows-static`, `x64-mingw-static`, `arm64-linux`, `x64-osx`.
 - **CI never runs the CURRENT C suite.** `vcpkg-release.yml` is the only workflow; on a push to
   `main` it runs `validate` (port files, surface check, gate self-test) only. On a tag, `compat`
