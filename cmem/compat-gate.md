@@ -80,6 +80,18 @@ reads only the leading comment.
 - Run `42391904762` on tag `v1.1.2` (`22f9eac`, 2026-11-07): all green again — `validate`,
   `compat` (v1.1.1's 34 tests against the 1.1.2 header, Linux), `install` on the same three
   triplets; `main`'s run `42391902045` green. Job conclusions read from the public API.
+- Run `42398405077` on tag `v2.0.0` (`126d361`, 2026-11-07): **RED, and the release itself is
+  not at fault.** `validate` passed every pin, version and git-tree step and the surface check;
+  the gate SELF-TEST failed, so `compat` and `install` were skipped. Cause: the self-test's SPEC
+  mutations hard-coded `SPEC v3.0.0`, and `e97218f` moved the header to v4.0.0 (the self-test was
+  run before that commit, not after it). Fixed on `main` (`scripts/check-compat-gate.ts` now reads
+  the version from the header's conformance line; 50/50; inverted, one case → 49/1). The tag was
+  NOT moved. Covered instead: raw GitHub serves `v2.0.0`'s header and LICENSE with the pinned
+  sha512 (all 128 digits); `compat.ts --release` run locally → "a major step from v1.1.2", exit 0.
+  Still owed: the `install` jobs, which need a `workflow_dispatch` run on `main` (they download
+  the header from the `v2.0.0` tag). This session has no `gh` or token; the owner starts it
+  from the Actions tab.
+  **Lesson:** after any header edit, run `make surface-check compat-selftest`, not only `make test`.
 - Still not covered: CI runs the PREVIOUS tag's tests, never the current `tests/spec_tests.c` (34
   since 2026-10-26) — see overview § Known gaps. The `validate` additions (surface `--check`,
   self-test) have run green on Linux since run `39804596951` (2026-10-22).

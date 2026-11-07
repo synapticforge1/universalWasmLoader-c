@@ -44,7 +44,15 @@ const POOL_FREE = "void uwl_pool_free(uwl_pool_t *p);";
 const POOL_NEW = "                         size_t size, char **err);";
 const ENUM_TAIL = "    UWL_STR       /**< UTF-8 string (WIT `string`). */";
 const VAL_LEN = "    size_t len; /**< Byte length of `str` when `kind == UWL_STR`. */";
-const SPEC = "Conforms to the cross-language SPEC v3.0.0";
+// The SPEC cases are relative to the header's CURRENT version, read from its
+// conformance line, so a SPEC bump does not break them (it did at 2.0.0).
+const specMatch = /Conforms to the cross-language SPEC v(\d+)\.(\d+)\.(\d+)/.exec(base);
+if (!specMatch) throw new Error("self-test: the header has no 'Conforms to the cross-language SPEC vX.Y.Z' line");
+const [SPEC, MA, MI, PA] = [specMatch[0], Number(specMatch[1]), Number(specMatch[2]), Number(specMatch[3])];
+const CUR = `${MA}.${MI}.${PA}`;
+const specAt = (v: string) => SPEC.replace(`v${CUR}`, `v${v}`);
+const SPEC_MINOR = `${MA}.${MI + 1}.0`, SPEC_PATCH = `${MA}.${MI}.${PA + 1}`, SPEC_MAJOR = `${MA + 1}.0.0`;
+const SPEC_LOWER = MA > 0 ? `${MA - 1}.9.0` : "0.0.0";
 const AS_BOOL = "static inline int         uwl_as_bool(uwl_val_t v) { return v.as.b; }";
 
 expectFloor("unchanged header", base, "patch");
@@ -62,10 +70,10 @@ expectFloor("struct member added", mutate(VAL_LEN, `${VAL_LEN}\n    int flags;`)
 expectFloor("struct member renamed", mutate(VAL_LEN, "    size_t length;"), "major", "changed: type uwl_val_t");
 expectFloor("public macro added", mutate(POOL_FREE, `${POOL_FREE}\n#define UWL_POOL_DEFAULT 4`), "minor", "added: macro UWL_POOL_DEFAULT");
 expectFloor("public include removed", mutate("#include <stddef.h>\n", ""), "major", "removed: include <stddef.h>");
-expectFloor("SPEC minor raised", mutate(SPEC, SPEC.replace("v3.0.0", "v3.1.0")), "minor", "SPEC 3.0.0 -> 3.1.0");
-expectFloor("SPEC patch raised", mutate(SPEC, SPEC.replace("v3.0.0", "v3.0.1")), "patch", "SPEC 3.0.0 -> 3.0.1");
-expectFloor("SPEC major raised", mutate(SPEC, SPEC.replace("v3.0.0", "v4.0.0")), "major", "SPEC 3.0.0 -> 4.0.0");
-expectFloor("SPEC lowered", mutate(SPEC, SPEC.replace("v3.0.0", "v2.9.0")), "major", "(lowered)");
+expectFloor("SPEC minor raised", mutate(SPEC, specAt(SPEC_MINOR)), "minor", `SPEC ${CUR} -> ${SPEC_MINOR}`);
+expectFloor("SPEC patch raised", mutate(SPEC, specAt(SPEC_PATCH)), "patch", `SPEC ${CUR} -> ${SPEC_PATCH}`);
+expectFloor("SPEC major raised", mutate(SPEC, specAt(SPEC_MAJOR)), "major", `SPEC ${CUR} -> ${SPEC_MAJOR}`);
+expectFloor("SPEC lowered", mutate(SPEC, specAt(SPEC_LOWER)), "major", "(lowered)");
 expectFloor("added + removed together", mutate(POOL_FREE, "int uwl_pool_busy(const uwl_pool_t *p);"), "major");
 
 expectThrow("unkeyable: bare struct definition", mutate(POOL_FREE, `${POOL_FREE}\nstruct uwl_x { int a; };`), "cannot key");

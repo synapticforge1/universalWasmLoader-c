@@ -33,6 +33,5 @@ Distributed through the repo's own vcpkg registry (`ports/`, `versions/`).
    the header from the `v<version>` tag, so a tag IS a release; CI (`vcpkg-release.yml`) validates
    the port but does not run the C tests.
 
-**Current state:** v1.1.2 released (2026-11-07; the H29 typed-accessor fix). `main` carries SPEC
-4.0.0 (C29), unreleased, a major (next: 2.0.0); 84/84. GitHub:
+**Current state:** v2.0.0 (2026-11-07; SPEC 4.0.0, workspace C29), 84/84. GitHub:
 `synapticforge1/universalWasmLoader-c`.

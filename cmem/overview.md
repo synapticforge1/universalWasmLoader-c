@@ -31,7 +31,7 @@ its ecosystem.
   URL. Consumers' `vcpkg-configuration.json` registry `repository` should use the org URL, with a
   baseline at or after the `registry: … port-version 2` commit once it is pushed.
 
-## Current state — v1.1.2
+## Current state — v2.0.0
 
 The header-only loader is implemented and passes the full reference suite. Released tags: `v1.0.0`
 (`4da2c0b`, 2026-06-17), `v1.1.0` (`3aea7bd`, 2026-06-24; adds the convenience call layer; vcpkg
@@ -41,9 +41,13 @@ and the 34-assertion suite (SPEC §10 tested); first release through `make bump`
 v1.1.0's tests green). `v1.1.2` (2026-11-07, owner: "push and release"): the H29 / S8 fix — typed
 accessors fail on a result-kind mismatch instead of reading the wrong union member; new header
 sha512 (recomputed by `bump` from the committed blob and re-derived independently); 43 assertions;
-floor patch vs v1.1.1, v1.1.1's 34 tests green. **Since 2026-11-07, `main` carries SPEC 4.0.0
-(C29; see § SPEC 4.0.0 below), not yet released.** It is a major, so the next release is 2.0.0,
-through `make bump KIND=major` when the owner says so. Working tree:
+floor patch vs v1.1.1, v1.1.1's 34 tests green. **`v2.0.0`** (2026-11-07, owner: "release
+2.0.0"): SPEC 4.0.0 (C29; see § SPEC 4.0.0 below), a major. `make bump KIND=major` gave floor
+major; the header sha512 was re-derived independently; `release: 2.0.0` `921b96b`; registry
+`126d361` (git-tree `1b38345e…`, baseline 2.0.0), which the annotated tag points at. Served
+header and LICENSE = pins. The tag's CI run was RED because of a self-test script bug, not the
+release (compat-gate.md § First tagged run); the fix is on `main` and the tag was not moved. The
+`install` jobs still need a manual dispatch run. Working tree:
 
 - `universal_wasm_loader.h` — the single-header library (public API + `UWL_IMPLEMENTATION` body).
 - `tests/spec_tests.c` — the SPEC §8 reference suite (84 assertions since 2026-11-07, C29).
@@ -162,7 +166,7 @@ Before, the union was read as the wrong member, silently: measured on math_50, `
 args carry their own kinds and wasmtime refuses a mismatch (`argument type mismatch … expected f64,
 found i32`); results decode by the wasm valkind (raw `multiply(2.5, 4.0)` → 10.0).
 
-## Canonical ABI / SPEC conformance status — CONFORMANT to SPEC 4.0.0 on `main` (`c7cc259` + `e97218f`; released tags: 3.0.0)
+## Canonical ABI / SPEC conformance status — CONFORMANT to SPEC 4.0.0 (`c7cc259` + `e97218f`; released as v2.0.0; v1.x: 3.0.0)
 
 SPEC 4.0.0's additions are in § SPEC 4.0.0 "loud failures" above; the 3.0.0 ABI below is
 unchanged by it.
@@ -318,9 +322,9 @@ and the letters in `../../../cmem/handoffs.md`; the workspace sweep reads this s
   `.wit` fallback measured and recorded, not changed (owner / -js); S10's HTTP half n/a (no HTTP
   path). Fix `83fbeda`, released in **1.1.2** (2026-11-07). S9 and the `.wit` fallback were then
   decided as SPEC 4.0.0 and carried here by C29.
-- **C29 (re-align to SPEC 4.0.0; from loader-js)** — implemented 2026-11-07 on `main`, unreleased
-  (see § SPEC 4.0.0): items (1) to (4) done, (5) n/a (no http). Version decision: MAJOR, 2.0.0, when
-  the owner releases. Answered in the ledger; loader-js verifies and closes.
+- **C29 (re-align to SPEC 4.0.0; from loader-js)** — done 2026-11-07 (see § SPEC 4.0.0): items
+  (1) to (4) done, (5) n/a (no http). **Released as 2.0.0** the same day (tag `v2.0.0` →
+  `126d361`). Answered in the ledger; loader-js verifies and closes.
 - **H28 (maintainer address in one `cmem/` note; wabt-ts / binaryen-ts retired)** — record-only,
   nothing to change: this repo's history and commits use noreply (H19), it carries no contact note,
   and no tracked file cites either retired repo (★ rule tags name them as origins, not locations).
