@@ -31,14 +31,17 @@ its ecosystem.
   URL. Consumers' `vcpkg-configuration.json` registry `repository` should use the org URL, with a
   baseline at or after the `registry: … port-version 2` commit once it is pushed.
 
-## Current state — v1.1.1
+## Current state — v1.1.2
 
 The header-only loader is implemented and passes the full reference suite. Released tags: `v1.0.0`
 (`4da2c0b`, 2026-06-17), `v1.1.0` (`3aea7bd`, 2026-06-24; adds the convenience call layer; vcpkg
 port-version 2 since 2026-10-20), `v1.1.1` (2026-10-26, owner: "bump and push"): the header is
 byte-identical to 1.1.0 (same sha512 pins); the release carries the workspace reference fixtures
 and the 34-assertion suite (SPEC §10 tested); first release through `make bump` (floor patch,
-v1.1.0's tests green). Working tree:
+v1.1.0's tests green). `v1.1.2` (2026-11-07, owner: "push and release"): the H29 / S8 fix — typed
+accessors fail on a result-kind mismatch instead of reading the wrong union member; new header
+sha512 (recomputed by `bump` from the committed blob and re-derived independently); 43 assertions;
+floor patch vs v1.1.1, v1.1.1's 34 tests green. Working tree:
 
 - `universal_wasm_loader.h` — the single-header library (public API + `UWL_IMPLEMENTATION` body).
 - `tests/spec_tests.c` — the SPEC §8 reference suite (43 assertions since 2026-11-07).
@@ -261,7 +264,7 @@ and the letters in `../../../cmem/handoffs.md`; the workspace sweep reads this s
 - **H29 (three behaviour checks, S8 / S9 / S10)** — answered 2026-11-07: S8's typed-accessor
   defect FIXED (see § Typed accessors check the result kind), raw mode already correct; S9 and the
   `.wit` fallback measured and recorded, not changed (owner / -js); S10's HTTP half n/a (no HTTP
-  path). Unreleased: the fix ships in the next patch when the owner says.
+  path). Fix `83fbeda`, released in **1.1.2** (2026-11-07).
 - **H28 (maintainer address in one `cmem/` note; wabt-ts / binaryen-ts retired)** — record-only,
   nothing to change: this repo's history and commits use noreply (H19), it carries no contact note,
   and no tracked file cites either retired repo (★ rule tags name them as origins, not locations).
