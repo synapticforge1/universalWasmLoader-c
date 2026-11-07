@@ -23,7 +23,11 @@ opaque handles; every enum constant with its integer VALUE (C integers are froze
 inserted mid-list is major, appended is minor); public `#define`s and `#include`s; and the `SPEC
 vX.Y.Z` the header's leading comment states (exactly once). The generator FAILS on a form it cannot
 key (bare struct, extern variable, enum value expression, `#if`) rather than skipping it. **52
-symbols, SPEC 3.0.0, on 2026-10-22.**
+symbols, SPEC 3.0.0, on 2026-10-22; 52 symbols, SPEC 4.0.0 since `e97218f` (2026-11-07, C29).**
+That re-baseline is the gate's first MAJOR floor: `make compat` → `major: SPEC 3.0.0 -> 4.0.0`,
+with v1.1.2's 43 tests green on the 4.0.0 header (they use only conformant input). The behaviour
+commit before it (`c7cc259`) measured floor patch: the gate sees a behaviour break only through
+the SPEC line, or through a previous-tag test that turns red.
 
 **The floor:** removed or changed → major; added → minor; nothing → patch; the SPEC version moves it
 by its own level (lowered → major). ⚠️ A changed signature is major even when it only widens; the

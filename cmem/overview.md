@@ -162,7 +162,10 @@ Before, the union was read as the wrong member, silently: measured on math_50, `
 args carry their own kinds and wasmtime refuses a mismatch (`argument type mismatch … expected f64,
 found i32`); results decode by the wasm valkind (raw `multiply(2.5, 4.0)` → 10.0).
 
-## Canonical ABI / SPEC conformance status — CONFORMANT to SPEC 3.0.0
+## Canonical ABI / SPEC conformance status — CONFORMANT to SPEC 4.0.0 on `main` (`c7cc259` + `e97218f`; released tags: 3.0.0)
+
+SPEC 4.0.0's additions are in § SPEC 4.0.0 "loud failures" above; the 3.0.0 ABI below is
+unchanged by it.
 
 - **String PARAMS:** `cabi_realloc(0,0,1,len)` → write UTF-8 bytes into linear memory → pass
   `(ptr,len)` as two i32 args. (Implemented fresh; no deprecated form.)
