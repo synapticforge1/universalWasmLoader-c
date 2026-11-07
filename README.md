@@ -5,7 +5,8 @@ A single-header **C** loader for `.wasm` reactor/library modules produced by
 auto-detects the companion `.wit` file and applies the Canonical ABI, so you call WASM exports with
 native C values — the C sibling of the reference JS loader
 [`@jrmarcum/universal-wasm-loader`](https://jsr.io/@jrmarcum/universal-wasm-loader). Conforms to the
-cross-language **SPEC v3.0.0** (callee-allocated string returns + `cabi_post_<name>`).
+cross-language **SPEC v4.0.0** (callee-allocated string returns + `cabi_post_<name>`; loud failures,
+see [The companion `.wit`](#the-companion-wit) and [Host imports](#host-imports)).
 
 Built on the [wasmtime C API](https://docs.wasmtime.dev/c-api/). Usable from C, C++, and — via the C
 ABI — Zig, V, and Julia.

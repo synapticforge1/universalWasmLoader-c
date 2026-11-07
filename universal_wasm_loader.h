@@ -6,8 +6,10 @@
  * module produced by `wasmtk` (e.g. from TypeScript via `wasic`/`modc`),
  * auto-detects the companion `.wit` file, and applies the Canonical ABI so the
  * caller invokes exports by name with native C values. Built on the
- * **wasmtime C API**. Conforms to the cross-language SPEC v3.0.0
- * (callee-allocated string returns + `cabi_post_<name>`).
+ * **wasmtime C API**. Conforms to the cross-language SPEC v4.0.0
+ * (callee-allocated string returns + `cabi_post_<name>`; loud failures: only
+ * an absent `.wit` is raw, every WIT import needs a callback, typed calls and
+ * callback results are checked, never coerced).
  *
  * Intended consumers: C, C++, and — via the C ABI — Zig, V, and Julia.
  *
