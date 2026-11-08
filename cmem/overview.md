@@ -44,10 +44,10 @@ sha512 (recomputed by `bump` from the committed blob and re-derived independentl
 floor patch vs v1.1.1, v1.1.1's 34 tests green. **`v2.0.0`** (2026-11-07, owner: "release
 2.0.0"): SPEC 4.0.0 (C29; see § SPEC 4.0.0 below), a major. `make bump KIND=major` gave floor
 major; the header sha512 was re-derived independently; `release: 2.0.0` `921b96b`; registry
-`126d361` (git-tree `1b38345e…`, baseline 2.0.0), which the annotated tag points at. Served
-header and LICENSE = pins. The tag's CI run was RED because of a self-test script bug, not the
-release (compat-gate.md § First tagged run); the fix is on `main` and the tag was not moved. The
-`install` jobs still need a manual dispatch run. Working tree:
+`126d361` (git-tree `1b38345e…`, baseline 2.0.0). Served header and LICENSE = pins. The first
+tag run was RED because of a self-test script bug, not the release. The fix is `56217b6`, and the
+tag was MOVED there on the owner's word (release files identical). Run `42398823979` was all green,
+installs on three triplets included (compat-gate.md § First tagged run). Working tree:
 
 - `universal_wasm_loader.h` — the single-header library (public API + `UWL_IMPLEMENTATION` body).
 - `tests/spec_tests.c` — the SPEC §8 reference suite (84 assertions since 2026-11-07, C29).
@@ -282,7 +282,8 @@ re-verify; never edit them here.
   VALIDATED 2026-10-20** (dispatch run `39518063717`, 1.1.0 port-version 2, downloads from the
   `synapticforge1` org URLs) on `x64-linux`, `x64-windows` (MSVC) and `arm64-osx`; again for
   **1.1.1** on the tag push, 2026-10-26 (run `40382759953`, same three triplets, green), and for
-  **1.1.2**, 2026-11-07 (run `42391904762`, green). Not yet
+  **1.1.2**, 2026-11-07 (run `42391904762`, green), and for **2.0.0**, 2026-11-07 (run
+  `42398823979`, green). Not yet
   install-tested: `x64-windows-static`, `x64-mingw-static`, `arm64-linux`, `x64-osx`.
 - **CI never runs the CURRENT C suite.** `vcpkg-release.yml` is the only workflow; on a push to
   `main` it runs `validate` (port files, surface check, gate self-test) only. On a tag, `compat`
@@ -324,7 +325,7 @@ and the letters in `../../../cmem/handoffs.md`; the workspace sweep reads this s
   decided as SPEC 4.0.0 and carried here by C29.
 - **C29 (re-align to SPEC 4.0.0; from loader-js)** — done 2026-11-07 (see § SPEC 4.0.0): items
   (1) to (4) done, (5) n/a (no http). **Released as 2.0.0** the same day (tag `v2.0.0` →
-  `126d361`). Answered in the ledger; loader-js verifies and closes.
+  `56217b6` after the owner-approved re-tag; CI run `42398823979` green). Answered in the ledger; loader-js verifies and closes.
 - **H28 (maintainer address in one `cmem/` note; wabt-ts / binaryen-ts retired)** — record-only,
   nothing to change: this repo's history and commits use noreply (H19), it carries no contact note,
   and no tracked file cites either retired repo (★ rule tags name them as origins, not locations).

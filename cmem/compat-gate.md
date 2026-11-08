@@ -88,9 +88,12 @@ reads only the leading comment.
   the version from the header's conformance line; 50/50; inverted, one case → 49/1). The tag was
   NOT moved. Covered instead: raw GitHub serves `v2.0.0`'s header and LICENSE with the pinned
   sha512 (all 128 digits); `compat.ts --release` run locally → "a major step from v1.1.2", exit 0.
-  Still owed: the `install` jobs, which need a `workflow_dispatch` run on `main` (they download
-  the header from the `v2.0.0` tag). This session has no `gh` or token; the owner starts it
-  from the Actions tab.
+  **Then RE-TAGGED (owner: "option 3", 2026-11-07):** `v2.0.0` moved from `126d361` to `56217b6`,
+  which is byte-identical in header, LICENSE, `ports/` and `versions/`, so the pins and the
+  git-tree held. Run `42398823979` on the new tag: **all green**, i.e. `validate`, `compat`, and
+  `install` on `x64-windows`, `arm64-osx`, `x64-linux`. The served header was re-hashed after the
+  move and equals the pin. Anyone who fetched the tag in the minutes before holds the old
+  annotated tag object (`1ba8761`), whose files are the same.
   **Lesson:** after any header edit, run `make surface-check compat-selftest`, not only `make test`.
 - Still not covered: CI runs the PREVIOUS tag's tests, never the current `tests/spec_tests.c` (34
   since 2026-10-26) — see overview § Known gaps. The `validate` additions (surface `--check`,
