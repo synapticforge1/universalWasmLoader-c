@@ -31,7 +31,15 @@ its ecosystem.
   URL. Consumers' `vcpkg-configuration.json` registry `repository` should use the org URL, with a
   baseline at or after the `registry: … port-version 2` commit once it is pushed.
 
-## Current state — v2.0.0
+## Current state — v2.1.0
+
+**`v2.1.0`** (2026-11-08, owner: "push and release"): `uwl_err` / `UWL_ERR` (C39). `make bump
+KIND=minor` gave floor minor (`added: const UWL_ERR`, `added: fn uwl_err`); the header sha512 was
+re-derived independently; `release: 2.1.0` `edb7b3f`; registry `edc6993` (git-tree `b9ac75ef…`,
+baseline 2.1.0), which the annotated tag points at. Every CI check was run locally BEFORE tagging:
+surface-check, gate self-test 50/50, 93/93, `compat.ts --release` (v2.0.0's 84 tests green).
+Served header and LICENSE = pins. Tag run `42563162790` all green: validate, compat, install
+×3. History of the earlier releases follows.
 
 The header-only loader is implemented and passes the full reference suite. Released tags: `v1.0.0`
 (`4da2c0b`, 2026-06-17), `v1.1.0` (`3aea7bd`, 2026-06-24; adds the convenience call layer; vcpkg
@@ -115,7 +123,7 @@ namespace using the underscore form of the WIT name (`env-mul` → `env_mul`). A
 the `.wit` does not declare (WASI aside), and every import of a raw module, are bound to traps
 (`wasmtime_linker_define_unknown_imports_as_traps`), so those modules still instantiate.
 
-### A host callback can fail: `uwl_err` (workspace C39 from loader-v, 2026-11-08, on `main`, unreleased)
+### A host callback can fail: `uwl_err` (workspace C39 from loader-v, 2026-11-08, released in 2.1.0)
 
 Before this, `uwl_host_fn_t` could only return a value. A result import could fail only by
 returning a wrong kind, which traps with a misleading "returned no value (void); expected …". A
@@ -301,8 +309,8 @@ re-verify; never edit them here.
   VALIDATED 2026-10-20** (dispatch run `39518063717`, 1.1.0 port-version 2, downloads from the
   `synapticforge1` org URLs) on `x64-linux`, `x64-windows` (MSVC) and `arm64-osx`; again for
   **1.1.1** on the tag push, 2026-10-26 (run `40382759953`, same three triplets, green), and for
-  **1.1.2**, 2026-11-07 (run `42391904762`, green), and for **2.0.0**, 2026-11-07 (run
-  `42398823979`, green). Not yet
+  **1.1.2**, 2026-11-07 (run `42391904762`, green), for **2.0.0**, 2026-11-07 (run
+  `42398823979`, green), and for **2.1.0**, 2026-11-08 (run `42563162790`, green). Not yet
   install-tested: `x64-windows-static`, `x64-mingw-static`, `arm64-linux`, `x64-osx`.
 - **CI never runs the CURRENT C suite.** `vcpkg-release.yml` is the only workflow; on a push to
   `main` it runs `validate` (port files, surface check, gate self-test) only. On a tag, `compat`
@@ -345,9 +353,8 @@ and the letters in `../../../cmem/handoffs.md`; the workspace sweep reads this s
 - **C29 (re-align to SPEC 4.0.0; from loader-js)** — done 2026-11-07 (see § SPEC 4.0.0): items
   (1) to (4) done, (5) n/a (no http). **Released as 2.0.0** the same day (tag `v2.0.0` →
   `56217b6` after the owner-approved re-tag; CI run `42398823979` green). Answered in the ledger; loader-js verifies and closes.
-- **C39 (a host callback needs a way to fail; from loader-v)** — done 2026-11-08 on `main`,
-  unreleased: `uwl_err` / `UWL_ERR` (see § A host callback can fail). Minor → 2.1.0 at the owner's
-  release. Answered in the ledger; loader-v verifies and closes.
+- **C39 (a host callback needs a way to fail; from loader-v)** — done 2026-11-08: `uwl_err` /
+  `UWL_ERR` (see § A host callback can fail), **released in 2.1.0** the same day. Answered in the ledger; loader-v verifies and closes.
 - **C30 / C34 (release-workflow hazards; from S3D-ReportCompiler, record-only)** — read
   2026-11-08 (reasoned, not measured). Neither applies as written: `vcpkg-release.yml` has no
   `id-token`, uses no secret, and publishes to no registry (the tag is the release, which a person

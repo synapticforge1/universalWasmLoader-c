@@ -94,6 +94,9 @@ reads only the leading comment.
   `install` on `x64-windows`, `arm64-osx`, `x64-linux`. The served header was re-hashed after the
   move and equals the pin. Anyone who fetched the tag in the minutes before holds the old
   annotated tag object (`1ba8761`), whose files are the same.
+- Run `42563162790` on tag `v2.1.0` (`edc6993`, 2026-11-08): all green — `validate`, `compat`
+  (floor minor; v2.0.0's 84 tests against the 2.1.0 header), `install` ×3. Every one of those
+  checks was run locally before the tag was pushed, as the lesson below says.
   **Lesson:** after any header edit, run `make surface-check compat-selftest`, not only `make test`.
 - Still not covered: CI runs the PREVIOUS tag's tests, never the current `tests/spec_tests.c` (34
   since 2026-10-26) — see overview § Known gaps. The `validate` additions (surface `--check`,
