@@ -34,6 +34,23 @@ No host Python, no committed shell scripts. This file holds only what is specifi
   The one email allowed is the maintainer contact as commit author/committer (owner, 2026-10-26);
   this repo's history already uses noreply (H19) and keeps it.
 
+## No `gh`, in CI too (🔒 owner, 2026-11-08; workspace Tooling rule 9, letter H30)
+
+`gh` is not installed and is not to be. **Check the repo instead.**
+
+- Branches and tags: `git ls-remote origin`.
+- A served file: raw GitHub at the tag, hashed against the portfile's sha512 pin.
+- CI results: GitHub's public REST API, read-only and without a token (`actions/runs`, `/jobs`).
+  That is how every tag run here has been read since 2026-10-26.
+
+A GitHub web-UI task is an OWNER item, never "blocked on gh". Here that means a
+`workflow_dispatch` run of `vcpkg-release.yml` ("Run workflow"). A GitHub Release page is not
+needed at all: the tag is the release.
+
+Measured 2026-11-09: `git grep -n -w gh -- . ':!cmem'` on `main` gives 0 hits (only memory names
+the rule). `vcpkg-release.yml` calls no `gh`, and no script does. If a workflow ever needs what `gh` did, it uses the REST API from a Bun
+step with `GITHUB_TOKEN`, landed before a release and proven by its next real run.
+
 ## C compiler: `zig cc` (owner, 2026-10-22)
 
 The Makefile's default `CC` is `zig cc`, linked with Zig's `libunwind` everywhere except macOS; see

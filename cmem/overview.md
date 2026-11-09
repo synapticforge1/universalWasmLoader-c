@@ -325,7 +325,7 @@ re-verify; never edit them here.
   Owner, 2026-10-22: RECORD, do not add yet — a `tsc --noEmit` check would need `typescript` +
   Bun's types (a `package.json` in a C repo). Revisit if a script bug slips past the self-test.
 
-## Workspace letters — status for this repo (2026-11-07)
+## Workspace letters — status for this repo (2026-11-09)
 
 From the workspace ledger `../../../cmem/workspace-correspondence.md` (read first since 2026-10-26)
 and the letters in `../../../cmem/handoffs.md`; the workspace sweep reads this section.
@@ -354,7 +354,11 @@ and the letters in `../../../cmem/handoffs.md`; the workspace sweep reads this s
   (1) to (4) done, (5) n/a (no http). **Released as 2.0.0** the same day (tag `v2.0.0` →
   `56217b6` after the owner-approved re-tag; CI run `42398823979` green). Answered in the ledger; loader-js verifies and closes.
 - **C39 (a host callback needs a way to fail; from loader-v)** — done 2026-11-08: `uwl_err` /
-  `UWL_ERR` (see § A host callback can fail), **released in 2.1.0** the same day. Answered in the ledger; loader-v verifies and closes.
+  `UWL_ERR` (see § A host callback can fail), **released in 2.1.0** the same day. CLOSED by
+  loader-v on 2026-11-09, after it re-derived the change on `origin` and adopted it (-v `ea08973`).
+- **H30 (no `gh`, in CI too; record-only for this repo)** — recorded 2026-11-09 in
+  [working-rules.md](working-rules.md) § "No `gh`". Nothing to change: 0 `gh` hits outside `cmem/`
+  (`git grep -n -w gh -- . ':!cmem'`). The one web-UI task is the owner's `workflow_dispatch`. Answered in the ledger; loader-v verifies and closes.
 - **C30 / C34 (release-workflow hazards; from S3D-ReportCompiler, record-only)** — read
   2026-11-08 (reasoned, not measured). Neither applies as written: `vcpkg-release.yml` has no
   `id-token`, uses no secret, and publishes to no registry (the tag is the release, which a person
