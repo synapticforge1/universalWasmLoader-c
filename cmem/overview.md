@@ -50,7 +50,8 @@ tag was MOVED there on the owner's word (release files identical). Run `42398823
 installs on three triplets included (compat-gate.md § First tagged run). Working tree:
 
 - `universal_wasm_loader.h` — the single-header library (public API + `UWL_IMPLEMENTATION` body).
-- `tests/spec_tests.c` — the SPEC §8 reference suite (84 assertions since 2026-11-07, C29).
+- `tests/spec_tests.c` — the SPEC §8 reference suite (84 assertions since 2026-11-07, C29; 93
+  since 2026-11-08, C39).
 - `tests/*.wasm` + `tests/*.wit` + `tests/init_check.{wat,wasm}` + `tests/fixtures.json` — the
   workspace reference set, copied unmodified from loader-js on 2026-10-26 (stamp: wasmtk
   `4a5c3cf668d`; see Tests). `spec_tests.c` exercises `math_50`, `booleans_50`, `strings_50`,
@@ -114,7 +115,24 @@ namespace using the underscore form of the WIT name (`env-mul` → `env_mul`). A
 the `.wit` does not declare (WASI aside), and every import of a raw module, are bound to traps
 (`wasmtime_linker_define_unknown_imports_as_traps`), so those modules still instantiate.
 
-### SPEC 4.0.0 "loud failures" (workspace C29, implemented 2026-11-07 on `main`, unreleased)
+### A host callback can fail: `uwl_err` (workspace C39 from loader-v, 2026-11-08, on `main`, unreleased)
+
+Before this, `uwl_host_fn_t` could only return a value. A result import could fail only by
+returning a wrong kind, which traps with a misleading "returned no value (void); expected …". A
+VOID import ignored the value, so the WASM ran on after a failed callback. SPEC 4.0.0 § 4 has a
+callback's failure reach the export's caller. Now a callback returns **`uwl_err(msg)`**, a new
+kind **`UWL_ERR`** appended to `uwl_kind_t` (= 7) whose `str` owns the message. The trampoline
+checks it BEFORE the kind check and traps with `host callback <camel> (WIT import "<kebab>")
+failed: <msg>`, for every import. `uwl_err(NULL)` gives "(no message)"; `uwl_val_free` frees it;
+`uwl_call` refuses it as an argument (`got error`). It is an addition to the surface (one
+function, one appended constant) → a MINOR, 2.1.0. Ports that vendor the header (-v, -zig) take
+it at their next re-vendor.
+Tested by `test_callback_failure` (9 checks). It writes a hand-assembled 99-byte module (`run`
+calls the void imports `ping` then `after`, returns 42) beside a `.wit`, then removes both; no
+reference fixture has a void import, and the fixtures are -js's, so none is added. Inverted: the
+trampoline check disabled on a scratch header → 89 / 4, exactly the four failure-path checks.
+
+### SPEC 4.0.0 "loud failures" (workspace C29, released in 2.0.0)
 
 The owner decided H29's open questions as SPEC 4.0.0 (`-js/SPEC.md`, released with loader-js
 2.0.0). What this header now does, with the 1.1.2 behaviour it replaces (measured for H29):
@@ -184,8 +202,9 @@ unchanged by it.
 
 ## Tests
 
-`make test` → builds `tests/spec_tests.c` and runs it: **84 passed, 0 failed** (29 until
-2026-10-26, 34 and then 43 on 2026-11-07, 84 since C29 the same day). The C29 tests are SPEC §8
+`make test` → builds `tests/spec_tests.c` and runs it: **93 passed, 0 failed** (29 until
+2026-10-26, 34 and then 43 on 2026-11-07, 84 since C29 the same day, 93 since C39 on 2026-11-08;
+see § A host callback can fail). The C29 tests are SPEC §8
 "Refusals" as they apply to C: `test_wit_absent_vs_failed` (a path with no `.wasm` suffix → raw;
 a `.wit` that is a directory → refused; a bad `.wit` with no `.wasm` → the `.wit`'s fault, so it is
 read first), `test_wit_parsing` (ten malformed `.wit` beside a copy of `math_50.wasm`, each refused
@@ -326,6 +345,15 @@ and the letters in `../../../cmem/handoffs.md`; the workspace sweep reads this s
 - **C29 (re-align to SPEC 4.0.0; from loader-js)** — done 2026-11-07 (see § SPEC 4.0.0): items
   (1) to (4) done, (5) n/a (no http). **Released as 2.0.0** the same day (tag `v2.0.0` →
   `56217b6` after the owner-approved re-tag; CI run `42398823979` green). Answered in the ledger; loader-js verifies and closes.
+- **C39 (a host callback needs a way to fail; from loader-v)** — done 2026-11-08 on `main`,
+  unreleased: `uwl_err` / `UWL_ERR` (see § A host callback can fail). Minor → 2.1.0 at the owner's
+  release. Answered in the ledger; loader-v verifies and closes.
+- **C30 / C34 (release-workflow hazards; from S3D-ReportCompiler, record-only)** — read
+  2026-11-08 (reasoned, not measured). Neither applies as written: `vcpkg-release.yml` has no
+  `id-token`, uses no secret, and publishes to no registry (the tag is the release, which a person
+  pushes). It has no `permissions:` block either, so its `GITHUB_TOKEN` gets the repo's default
+  scope, and its `uses:` are tag-pinned (`@v4`, `@v2`). Not changed; a `permissions: contents:
+  read` line would narrow the token, and that is the owner's call.
 - **H28 (maintainer address in one `cmem/` note; wabt-ts / binaryen-ts retired)** — record-only,
   nothing to change: this repo's history and commits use noreply (H19), it carries no contact note,
   and no tracked file cites either retired repo (★ rule tags name them as origins, not locations).

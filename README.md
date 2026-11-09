@@ -99,6 +99,17 @@ is coerced. Any other kind, including `uwl_void()`, makes the export call that r
 fail, naming the callback, the import, the result type and the value. For an import with no result,
 the returned value is ignored.
 
+A callback that cannot do its job returns `uwl_err("why")`. This works for any import, including
+one with no result: the WASM stops at the import, and the `uwl_call` (or convenience call) of the
+export that reached it fails with `host callback ping (WIT import "ping") failed: why`.
+
+```c
+static uwl_val_t ping(const uwl_val_t *a, size_t n, void *ud) {
+    if (!device_ready()) return uwl_err("device not ready");
+    return uwl_void();                          // a void import: the value is ignored
+}
+```
+
 ## Version pinning
 
 Append `@N` to assert the module's exported `version` i32 global equals `N` (the C shared-library

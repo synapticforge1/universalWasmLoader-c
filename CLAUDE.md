@@ -13,14 +13,14 @@ archive is `git show 1057d89:CLAUDE.md`).
 ## What this is
 
 The C port of the Universal WASM Loader: a single STB-style header, `universal_wasm_loader.h`, on the
-wasmtime C API, for C, C++, Zig, V and Julia consumers. Conformant to the loader `SPEC.md` 3.0.0.
+wasmtime C API, for C, C++, Zig, V and Julia consumers. Conformant to the loader `SPEC.md` 4.0.0.
 Distributed through the repo's own vcpkg registry (`ports/`, `versions/`).
 
 ## Triggers (defined in `cmem/INDEX.md`, binding)
 
 - **"update the project memory"** — revise the `cmem/` files; sync `README.md` only where
   user-relevant.
-- **"look for code issues"** — the comprehensive audit; keep `make clean test` at 84/84.
+- **"look for code issues"** — the comprehensive audit; keep `make clean test` at 93/93.
 
 ## Three things that bite immediately
 
@@ -33,5 +33,6 @@ Distributed through the repo's own vcpkg registry (`ports/`, `versions/`).
    the header from the `v<version>` tag, so a tag IS a release; CI (`vcpkg-release.yml`) validates
    the port but does not run the C tests.
 
-**Current state:** v2.0.0 (2026-11-07; SPEC 4.0.0, workspace C29), 84/84. GitHub:
+**Current state:** v2.0.0 (2026-11-07; SPEC 4.0.0, workspace C29). `main` adds `uwl_err` (C39,
+unreleased, a minor → 2.1.0); 93/93. GitHub:
 `synapticforge1/universalWasmLoader-c`.

@@ -42,7 +42,8 @@ function expectThrow(name: string, text: string, msg: string) {
 
 const POOL_FREE = "void uwl_pool_free(uwl_pool_t *p);";
 const POOL_NEW = "                         size_t size, char **err);";
-const ENUM_TAIL = "    UWL_STR       /**< UTF-8 string (WIT `string`). */";
+// The LAST enum constant (no trailing comma); move it when a constant is appended.
+const ENUM_TAIL = "    UWL_ERR       /**< A host callback's failure; `str` is the message. See #uwl_err. */";
 const VAL_LEN = "    size_t len; /**< Byte length of `str` when `kind == UWL_STR`. */";
 // The SPEC cases are relative to the header's CURRENT version, read from its
 // conformance line, so a SPEC bump does not break them (it did at 2.0.0).
@@ -64,7 +65,7 @@ expectFloor("function removed", mutate(POOL_FREE, ""), "major", "removed: fn uwl
 expectFloor("function added", mutate(POOL_FREE, `${POOL_FREE}\nint uwl_pool_busy(const uwl_pool_t *p);`), "minor", "added: fn uwl_pool_busy");
 expectFloor("parameter retyped", mutate(POOL_NEW, "                         int size, char **err);"), "major", "changed: fn uwl_pool_new");
 expectFloor("return type changed", mutate(POOL_FREE, "int uwl_pool_free(uwl_pool_t *p);"), "major", "changed: fn uwl_pool_free");
-expectFloor("enum constant appended", mutate(ENUM_TAIL, "    UWL_STR,\n    UWL_LIST"), "minor", "added: const UWL_LIST");
+expectFloor("enum constant appended", mutate(ENUM_TAIL, "    UWL_ERR,\n    UWL_LIST"), "minor", "added: const UWL_LIST");
 expectFloor("enum constant inserted mid-list", mutate("    UWL_BOOL,", "    UWL_CHAR,\n    UWL_BOOL,"), "major", "changed: const UWL_BOOL");
 expectFloor("struct member added", mutate(VAL_LEN, `${VAL_LEN}\n    int flags;`), "major", "changed: type uwl_val_t");
 expectFloor("struct member renamed", mutate(VAL_LEN, "    size_t length;"), "major", "changed: type uwl_val_t");

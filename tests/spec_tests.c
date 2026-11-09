@@ -403,6 +403,101 @@ out:
     if (b) uwl_free(b);
 }
 
+/* ── Workspace C39: a host callback can FAIL (uwl_err), void imports included ──
+ * A hand-assembled module (no reference fixture has a void import):
+ *   (import "env" "ping"  (func))   (import "env" "after" (func))
+ *   (func (export "run") (result i32) call 0  call 1  i32.const 42)
+ * `after` counts its calls, so it shows whether the WASM ran on past `ping`. */
+static const unsigned char VOID_IMPORTS_WASM[] = {
+    0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+    0x01, 0x08, 0x02, 0x60, 0x00, 0x00, 0x60, 0x00, 0x01, 0x7f,               /* types */
+    0x02, 0x18, 0x02,                                                           /* imports */
+    0x03, 'e', 'n', 'v', 0x04, 'p', 'i', 'n', 'g', 0x00, 0x00,
+    0x03, 'e', 'n', 'v', 0x05, 'a', 'f', 't', 'e', 'r', 0x00, 0x00,
+    0x03, 0x02, 0x01, 0x01,                                                     /* functions */
+    0x07, 0x07, 0x01, 0x03, 'r', 'u', 'n', 0x00, 0x02,                          /* exports */
+    0x0a, 0x0a, 0x01, 0x08, 0x00, 0x10, 0x00, 0x10, 0x01, 0x41, 0x2a, 0x0b,   /* code */
+};
+
+static int g_after_calls = 0;
+
+static uwl_val_t cb_after(const uwl_val_t *a, size_t n, void *ud) {
+    (void)a; (void)n; (void)ud;
+    g_after_calls++;
+    return uwl_void();
+}
+
+/* ud: NULL → succeed; otherwise fail with that message (or uwl_err(NULL) for "") */
+static uwl_val_t cb_ping(const uwl_val_t *a, size_t n, void *ud) {
+    (void)a; (void)n;
+    if (!ud) return uwl_void();
+    const char *msg = (const char *)ud;
+    return uwl_err(*msg ? msg : NULL);
+}
+
+static uwl_val_t add_err(const uwl_val_t *a, size_t n, void *ud) {
+    (void)a; (void)n; (void)ud;
+    return uwl_err("adder offline");
+}
+
+static void test_callback_failure(void) {
+    printf("C39 — a host callback fails with uwl_err, void imports included\n");
+    const char *w = "tests/void_imports.wasm", *wit = "tests/void_imports.wit";
+    FILE *f = fopen(w, "wb");
+    int wrote = f && fwrite(VOID_IMPORTS_WASM, 1, sizeof(VOID_IMPORTS_WASM), f) == sizeof(VOID_IMPORTS_WASM);
+    if (f) fclose(f);
+    wrote = wrote && write_text(wit, "world w {\n  import ping: func();\n  import after: func();\n"
+                                     "  export run: func() -> s32;\n}\n");
+    CHECK(wrote, "write the void-import module and its .wit");
+
+    static const char *cases[] = { NULL, "disk full", "" };
+    for (int i = 0; i < 3; i++) {
+        uwl_host_callback_t cbs[2] = { { "ping", cb_ping, (void *)cases[i] }, { "after", cb_after, NULL } };
+        uwl_module_t *m = load("void_imports.wasm", cbs, 2);
+        if (!m) { CHECK(0, "void_imports loads"); continue; }
+        g_after_calls = 0;
+        uwl_val_t out = uwl_void();
+        char *err = NULL;
+        int rc = uwl_call(m, "run", NULL, 0, &out, &err);
+        if (!cases[i]) {
+            CHECK(rc == 0 && uwl_as_i32(out) == 42 && g_after_calls == 1,
+                  "void import succeeding: run()==42, the WASM ran on to 'after'");
+        } else if (*cases[i]) {
+            CHECK(rc != 0 && has(err, "host callback ping") && has(err, "failed: disk full"),
+                  "void import returning uwl_err(\"disk full\"): run fails with that message");
+            CHECK(g_after_calls == 0, "  ...and the WASM stopped at the import ('after' never ran)");
+        } else {
+            CHECK(rc != 0 && has(err, "failed: (no message)"), "uwl_err(NULL): fails with \"(no message)\"");
+        }
+        if (rc != 0 && cases[i] && *cases[i] && !has(err, "disk full")) printf("    -> %s\n", err ? err : "?");
+        uwl_val_free(&out);
+        uwl_string_free(err);
+        uwl_free(m);
+    }
+    remove(w); remove(wit);
+
+    /* A result import failing: its own message, not "returned …; expected s32". */
+    uwl_host_callback_t cbs[2] = { { "envMul", mul_ok, NULL }, { "envAdd", add_err, NULL } };
+    uwl_module_t *m = load("imports_50.wasm", cbs, 2);
+    if (m) {
+        uwl_val_t a[2] = { uwl_i32(10), uwl_i32(7) }, out = uwl_void();
+        char *err = NULL;
+        int rc = uwl_call(m, "combine", a, 2, &out, &err);
+        CHECK(rc != 0 && has(err, "host callback envAdd") && has(err, "failed: adder offline") && !has(err, "expected"),
+              "result import returning uwl_err: fails with the callback's message");
+        uwl_string_free(err);
+        uwl_val_t e = uwl_err("x");
+        CHECK(e.kind == UWL_ERR && e.str && strcmp(e.str, "x") == 0, "uwl_err(\"x\") is kind UWL_ERR owning \"x\"");
+        err = NULL;
+        rc = uwl_call(m, "combine", (uwl_val_t[]){ e, uwl_i32(7) }, 2, &out, &err);
+        CHECK(rc != 0 && has(err, "parameter 'a'") && has(err, "got error"), "uwl_err is refused as an argument");
+        uwl_string_free(err);
+        uwl_val_free(&e);
+        CHECK(e.kind == UWL_VOID && e.str == NULL, "uwl_val_free frees an error value and resets it");
+        uwl_free(m);
+    } else CHECK(0, "imports_50 loads");
+}
+
 static void test_singleton(void) {
     printf("singleton — caches one instance\n");
     uwl_singleton_t *s = uwl_singleton_new(FX("math_50.wasm"), NULL, 0);
@@ -455,6 +550,7 @@ int main(void) {
     test_wit_parsing();
     test_import_refusals();
     test_typed_args();
+    test_callback_failure();
     test_singleton();
     test_pool();
     test_version();
