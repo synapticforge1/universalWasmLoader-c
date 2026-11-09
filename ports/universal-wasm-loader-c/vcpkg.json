@@ -1,6 +1,6 @@
 {
   "name": "universal-wasm-loader-c",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Header-only C loader for wasmtk .wasm reactor/library modules. Auto-detects the companion .wit and applies the Canonical ABI (SPEC 4.0.0: callee-allocated string returns + cabi_post; loud failures). Built on the wasmtime C API; usable from C, C++, Zig, V, and Julia.",
   "homepage": "https://github.com/synapticforge1/universalWasmLoader-c",
   "license": "MIT AND Apache-2.0 WITH LLVM-exception",
