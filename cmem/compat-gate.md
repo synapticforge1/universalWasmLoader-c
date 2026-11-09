@@ -141,8 +141,17 @@ adapted from loader-rs's.
   - `v9.9.9` → refused.
 - `Bun.YAML` parse: `release` needs the three jobs, `{"contents":"write"}`, 0 `uses:`.
 
-**UNMEASURED on GitHub until the next tag run.** Record that run's id and the page's
-`author.login` (expected `github-actions[bot]`) here and in the H32 ledger row.
+**MEASURED on GitHub, 2026-11-09, by the first tag after it landed, `v2.1.1` (→ `dc81b25`).**
+
+- The Release page `v2.1.1` exists: `releases/tag/v2.1.1` answers 200.
+- The repo's `releases.atom` names its author **`github-actions[bot]`**, updated 16:09:11Z.
+- The tag was not moved: `ls-remote` gives `v2.1.1^{}` = `dc81b25` afterwards.
+- `release` needs validate, compat and install, so its success implies all three passed.
+
+The per-job conclusions were NOT read: the public REST API's 60-per-hour unauthenticated limit
+was spent, because a 20 s poller is too fast. Poll at 2–3 minutes, or read `releases.atom` and
+the page, which are not rate-limited. The `main` run before the tag (`42648553716`, on `b794dd2`)
+was green, the first run of Bun 1.4.4 and the release self-test in `validate`.
 
 ## Traps met building it
 
