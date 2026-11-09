@@ -16,6 +16,8 @@ No host Python, no committed shell scripts. This file holds only what is specifi
   `scripts/fetch-wasmtime.sh` on 2026-10-22; no shell scripts remain in the repo. The compatibility
   gate (2026-10-22): `scripts/surface.ts`, `compat.ts`, `bump.ts`, `check-compat-gate.ts`, run via
   `make surface | surface-check | compat | compat-selftest | bump KIND=…` ([compat-gate.md](compat-gate.md)).
+  The release page (2026-11-09): `scripts/github-release.ts` (CI only) and
+  `check-github-release.ts` (`make release-selftest`).
   Besides C, Bun is the only scripting runtime here.
 - **Releases go through `make bump`**, never a hand edit of the version line or the sha512 pins; a
   surface change is re-baselined (`make surface`) in its own commit before the bump.
@@ -44,8 +46,24 @@ No host Python, no committed shell scripts. This file holds only what is specifi
   That is how every tag run here has been read since 2026-10-26.
 
 A GitHub web-UI task is an OWNER item, never "blocked on gh". Here that means a
-`workflow_dispatch` run of `vcpkg-release.yml` ("Run workflow"). A GitHub Release page is not
-needed at all: the tag is the release.
+`workflow_dispatch` run of `vcpkg-release.yml` ("Run workflow"). The GitHub Release page is made
+by CI's `release` job through the REST API, never by hand (H32, 2026-11-09; see the next section).
+
+## The release is the CI-made Release page (🔒 owner, 2026-11-09; letter H32)
+
+"yes. From this point forward it is the release page." A release is the tag PLUS its Release
+page. The page is made by the `release` job after every other job is green on the tag; how it
+works is in [compat-gate.md](compat-gate.md) § The release page. "Only new tags will get release
+pages": no backfill, so v1.0.0 … v2.1.0 stay without one. If the job fails, the release is
+incomplete. Re-run the failed job (an owner web-UI item); the script is safe to re-run.
+
+## Bun version: always the latest installed (🔒 owner, 2026-11-09; Tooling rule 10, letter H31)
+
+"Update any notations on bun version to the latest installed version always." Before writing a
+Bun version, check `bun --version`. It was 1.4.4 on 2026-11-09, so `vcpkg-release.yml`'s
+`BUN_VERSION` moved 1.4.3 → 1.4.4 that day. `BUN_SHA256` is the sha256 of `bun-linux-x64.zip`
+from that release's `SHASUMS256.txt`, so move the two together. A dated test result keeps its
+Bun until the test is re-run. This repo declares no minimum Bun.
 
 Measured 2026-11-09: `git grep -n -w gh -- . ':!cmem'` on `main` gives 0 hits (only memory names
 the rule). `vcpkg-release.yml` calls no `gh`, and no script does. If a workflow ever needs what `gh` did, it uses the REST API from a Bun

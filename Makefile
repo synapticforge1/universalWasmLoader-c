@@ -50,7 +50,7 @@ endif
 
 TEST_BIN = tests/spec_tests$(EXE)
 
-.PHONY: all test fetch clean print-sdk surface surface-check compat compat-selftest bump
+.PHONY: all test fetch clean print-sdk surface surface-check compat compat-selftest release-selftest bump
 
 all: test
 
@@ -92,6 +92,10 @@ compat:
 
 compat-selftest:
 	bun run scripts/check-compat-gate.ts
+
+# The release-page script against a mock GitHub API (cmem/compat-gate.md § The release page).
+release-selftest:
+	bun run scripts/check-github-release.ts
 
 bump:
 	bun run scripts/bump.ts $(KIND)

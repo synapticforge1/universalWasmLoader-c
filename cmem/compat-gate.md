@@ -14,6 +14,7 @@ Modelled on loader-js's (`../universalWasmLoader-js/cmem/compat-gate.md`).
 | Rule 4, deprecate first | README `### ⚠️ Breaking Changes` table | by hand, when a deprecation lands |
 | Rule 5, re-baseline alone | `surface-check` | an intended surface change is its own commit (`make surface`), with the reason |
 | Self-test | `scripts/check-compat-gate.ts` (50 checks, 2026-10-22) | `make compat-selftest`, CI `validate` |
+| Release page | `scripts/github-release.ts` + its self-test (13 checks, 2026-11-09) | CI `release` job on a tag; `make release-selftest` (§ The release page) |
 
 **The surface of this loader:** the header's public region (between `#define
 UNIVERSAL_WASM_LOADER_H` and `#ifdef UWL_IMPLEMENTATION`, comments and `__cplusplus` guards
@@ -101,6 +102,47 @@ reads only the leading comment.
 - Still not covered: CI runs the PREVIOUS tag's tests, never the current `tests/spec_tests.c` (34
   since 2026-10-26) — see overview § Known gaps. The `validate` additions (surface `--check`,
   self-test) have run green on Linux since run `39804596951` (2026-10-22).
+
+## The release page (workspace H32, added 2026-11-09)
+
+🔒 Owner, 2026-11-09: **"yes. From this point forward it is the release page."** From the first
+tag cut after this landed, a release here is its GitHub Release page, made by CI. Earlier tags
+(v1.0.0 … v2.1.0, six of them) keep no page: "only new tags will get release pages."
+
+| Piece | File | Runs in |
+| --- | --- | --- |
+| The job | `vcpkg-release.yml` `release`: tags only, `needs: [validate, compat, install]`, `contents: write` only, no `uses:` | after every other job is green on the tag |
+| The script | `scripts/github-release.ts` (Bun, REST API, `GITHUB_TOKEN`) | that job |
+| Its self-test | `scripts/check-github-release.ts` (mock API on `Bun.serve`, 13 checks) | `make release-selftest`, CI `validate` |
+
+The job clones without credentials and checks HEAD = `github.sha`. It installs Bun itself, pinned
+by sha256, because `oven-sh/setup-bun` takes `github.token` by default (C30). The script follows
+H32's order:
+
+1. The tag exists on GitHub and peels, annotated tags followed, to `GITHUB_SHA`. This comes first
+   because `POST /releases` would CREATE a missing tag (loader-rs's hazard).
+2. If a release already exists, the script exits 0 without writing anything.
+3. It POSTs `generate_release_notes` with a vcpkg note on top, reads the page back, and peels the
+   tag again.
+
+Every request has a 30 s limit (`UWL_HTTP_TIMEOUT_MS`), covering the body too. The script is
+adapted from loader-rs's.
+
+**Measured 2026-11-09:**
+
+- Self-test 13/13.
+- Inverted with three one-line mutants, each catching only its own case:
+  - no sha check → 11 / 2 (both "another commit" cases POST);
+  - no existing-release check → 12 / 1;
+  - no time limit → 12 / 1 (a stalled API).
+- Real GitHub, read-only `--dry-run` without a token:
+  - `v2.1.0` + its commit → passes and stops before the POST;
+  - `v2.1.0` + 2.0.0's commit → refused;
+  - `v9.9.9` → refused.
+- `Bun.YAML` parse: `release` needs the three jobs, `{"contents":"write"}`, 0 `uses:`.
+
+**UNMEASURED on GitHub until the next tag run.** Record that run's id and the page's
+`author.login` (expected `github-actions[bot]`) here and in the H32 ledger row.
 
 ## Traps met building it
 

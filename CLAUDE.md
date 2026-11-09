@@ -31,7 +31,8 @@ Distributed through the repo's own vcpkg registry (`ports/`, `versions/`).
 3. **Nothing is pushed, tagged or published unless the owner says so.** Releases go through
    `make bump KIND=…` (the compatibility gate, `cmem/compat-gate.md`). The vcpkg port downloads
    the header from the `v<version>` tag, so a tag IS a release; CI (`vcpkg-release.yml`) validates
-   the port but does not run the C tests.
+   the port but does not run the C tests. Its `release` job makes the GitHub Release page, which
+   is the release from the next tag on (owner, 2026-11-09; H32).
 
 **Current state:** v2.1.0 (2026-11-08; `uwl_err`, workspace C39; SPEC 4.0.0), 93/93. GitHub:
 `synapticforge1/universalWasmLoader-c`.

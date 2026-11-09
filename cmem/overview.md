@@ -356,6 +356,13 @@ and the letters in `../../../cmem/handoffs.md`; the workspace sweep reads this s
 - **C39 (a host callback needs a way to fail; from loader-v)** — done 2026-11-08: `uwl_err` /
   `UWL_ERR` (see § A host callback can fail), **released in 2.1.0** the same day. CLOSED by
   loader-v on 2026-11-09, after it re-derived the change on `origin` and adopted it (-v `ea08973`).
+- **H32 (CI-made Release pages; loader-c: "a `release` job")** — done 2026-11-09, on local `main`:
+  the job and `scripts/github-release.ts` with its mock-API self-test (13/13, inverted by three
+  mutants). See [compat-gate.md](compat-gate.md) § The release page. Unmeasured on GitHub until
+  the next tag. No backfill (owner).
+- **H31 (Bun notations = the latest installed)** — done 2026-11-09: `vcpkg-release.yml` 1.4.3 →
+  **1.4.4** (`bun --version` here), now one `BUN_VERSION` plus its sha256. That was the only Bun
+  version in the tree. Proven by the next CI run.
 - **H30 (no `gh`, in CI too; record-only for this repo)** — recorded 2026-11-09 in
   [working-rules.md](working-rules.md) § "No `gh`". Nothing to change: 0 `gh` hits outside `cmem/`
   (`git grep -n -w gh -- . ':!cmem'`). The one web-UI task is the owner's `workflow_dispatch`. Answered in the ledger; loader-v verifies and closes.
