@@ -3,6 +3,7 @@
   "spec": "4.0.0",
   "symbols": {
     "const UWL_BOOL": "uwl_kind_t=5",
+    "const UWL_ERR": "uwl_kind_t=7",
     "const UWL_F32": "uwl_kind_t=3",
     "const UWL_F64": "uwl_kind_t=4",
     "const UWL_I32": "uwl_kind_t=1",
@@ -25,6 +26,7 @@
     "fn uwl_call_i64": "int64_t (uwl_module_t*,const char*,...)",
     "fn uwl_call_str": "char*(uwl_module_t*,const char*,...)",
     "fn uwl_call_void": "void (uwl_module_t*,const char*,...)",
+    "fn uwl_err": "uwl_val_t (const char*)",
     "fn uwl_f32": "static inline uwl_val_t (float)",
     "fn uwl_f64": "static inline uwl_val_t (double)",
     "fn uwl_free": "void (uwl_module_t*)",
