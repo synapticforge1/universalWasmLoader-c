@@ -353,8 +353,8 @@ and the letters in `../../../cmem/handoffs.md`; the workspace sweep reads this s
   [working-rules.md](working-rules.md) § "No `gh`". Nothing to change: 0 `gh` hits outside `cmem/`
   (`git grep -n -w gh -- . ':!cmem'`). The one web-UI task is the owner's "Re-run failed jobs" /
   `workflow_dispatch`. Answered in the ledger; the workspace verifies and closes.
-- **H33 (the release process, semi-uniform; D1–D3)** — done 2026-11-10 on local `main`
-  (unreleased): the card's "To converge" list. U4 is `scripts/release.ts` (pushes `main` only).
+- **H33 (the release process, semi-uniform; D1–D3)** — done 2026-11-10, pushed (`0d3e6d1`;
+  `main`'s run `42856737050` green on the non-release path), unreleased: the card's "To converge" list. U4 is `scripts/release.ts` (pushes `main` only).
   D1 is the workflow: checks → CI's tag (`ci-tag.ts`) → the page → `publish`. U10 is the
   registry-mode install as a user, in CI. U9: no `uses:`, Bun / Zig by sha256, vcpkg by commit,
   `permissions: {}`, `concurrency`. D3 is [release.md](release.md). Rehearsed before landing

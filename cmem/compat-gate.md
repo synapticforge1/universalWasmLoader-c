@@ -167,9 +167,17 @@ was green, the first run of Bun 1.4.4 and the release self-test in `validate`.
     port tree, baseline 2.1.2, header pin = HEAD blob.
 - **`Bun.YAML` parse of the workflow:** six jobs; `permissions: {}`; only `tag` / `release` write;
   0 `uses:`, 0 `gh`, 0 `1.4.3`.
-- **The first real run is the next release.** UNMEASURED on GitHub until then: the `tag` job's
-  POSTs, the `publish` job on three OSes, and the `install` job's overlay aimed at a commit on
-  macOS / Windows.
+- **On GitHub, the non-release path:** run `42856737050` on the push of `ef3998a` (2026-11-10;
+  version 2.1.1 already tagged at `dc81b25`) was green: `validate` succeeded, and `install`,
+  `compat`, `tag`, `release` and `publish` were skipped, as they must be for an ordinary push. That
+  run exercised, for the first time on GitHub:
+  - the credential-less clone;
+  - Bun installed by sha256;
+  - both self-tests (31 + 50);
+  - `ci-tag.ts state`.
+- **The first real RELEASE run is the next release.** UNMEASURED on GitHub until then: the `tag`
+  job's POSTs, the `publish` job on three OSes, Zig by sha256 in `compat`, and the `install` job's
+  overlay aimed at a commit on macOS / Windows.
 
 ## Traps met building it
 
