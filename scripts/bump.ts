@@ -100,9 +100,6 @@ portfile = setOnce(portfile, /(set\(UWL_LICENSE_SHA512 ")([^"]*)("\))/, blobSha5
 writeAtomic(PORT_MANIFEST, `${JSON.stringify(manifest, null, 2)}\n`);
 writeAtomic(PORTFILE, portfile);
 
-console.log(`\nbumped ${current} -> ${next} (${kind}); edited vcpkg.json and portfile.cmake. Next (docs/vcpkg.md § 4):`);
-console.log("  1. review the diff; add a README Breaking Changes row if this is a major");
-console.log(`  2. git commit the port (message via a file: git commit -F <file>)`);
-console.log(`  3. set versions/u-/universal-wasm-loader-c.json: new first entry { "version": "${next}", "port-version": 0,`);
-console.log(`     "git-tree": $(git rev-parse HEAD:ports/universal-wasm-loader-c) }, and versions/baseline.json; commit`);
-console.log(`  4. only on the owner's word: git tag v${next}; push main and the tag (CI re-runs compat --release)`);
+console.log(`\nbumped ${current} -> ${next} (${kind}); edited vcpkg.json and portfile.cmake.`);
+console.log("scripts/release.ts (make release KIND=…) commits this as its own commit, writes the registry entry,");
+console.log(`and pushes main; CI then checks, tags v${next}, makes the page and installs it. Nobody tags by hand.`);

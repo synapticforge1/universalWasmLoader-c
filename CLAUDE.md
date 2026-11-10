@@ -28,11 +28,12 @@ Distributed through the repo's own vcpkg registry (`ports/`, `versions/`).
    compiler is `zig cc` (plus Zig's `libunwind`); a plain `make test` can pass on a stale binary.
 2. **Scripting is Bun/TypeScript**, no shell scripts, no heredocs; commit messages go through a file
    (`git commit -F`). Rules: workspace floor + `cmem/working-rules.md`.
-3. **Nothing is pushed, tagged or published unless the owner says so.** Releases go through
-   `make bump KIND=…` (the compatibility gate, `cmem/compat-gate.md`). The vcpkg port downloads
-   the header from the `v<version>` tag, so a tag IS a release; CI (`vcpkg-release.yml`) validates
-   the port but does not run the C tests. Its `release` job makes the GitHub Release page, which
-   is the release since `v2.1.1` (owner, 2026-11-09; H32).
+3. **Nothing is pushed or released unless the owner says so; nobody tags by hand.** "release" =
+   `make release KIND=…` (`scripts/release.ts`: guards, the bump and registry commits, ONE push
+   of `main`). CI then checks that commit, makes the tag, the GitHub Release page, and installs it
+   from the registry as a user (owner's order, 2026-11-10, H33). The vcpkg port downloads the
+   header from the `v<version>` tag, so CI's tag IS the publish. Every release is recorded in
+   `cmem/release.md` § Release History.
 
 **Current state:** v2.1.1 (2026-11-09; the first CI-made Release page, H32; SPEC 4.0.0), 93/93.
 GitHub:

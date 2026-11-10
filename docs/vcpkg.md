@@ -29,20 +29,20 @@ installs its headers/libs alongside the loader.
 
 The portfile fetches the loader header and LICENSE from
 `raw.githubusercontent.com/synapticforge1/universalWasmLoader-c/v<version>/…`, so the
-tag must exist on GitHub:
+tag must exist on GitHub. **Nobody makes that tag by hand:** CI makes it.
 
-```sh
-git push origin main
-git tag v1.1.0 && git push origin v1.1.0
-```
-
-To release a new version, run `make bump KIND=patch|minor|major` on a clean tree.
-It refuses a bump below the compatibility floor (see the README's "Versioning"
-section), runs the previous release's tests for a patch or minor, and updates
-`vcpkg.json` plus `UWL_VERSION` / `UWL_HEADER_SHA512` / `UWL_LICENSE_SHA512` in
-`ports/universal-wasm-loader-c/portfile.cmake` from the committed files. Then
-commit, update `versions/` (§4), and tag the new version. Never move an existing
-tag: consumers' sha512 pins are taken from it.
+To release a new version, run `make release KIND=patch|minor|major` on a clean
+`main` that equals GitHub's. It runs the gate, then `make bump`. That refuses a
+bump below the compatibility floor (see the README's "Versioning" section), runs
+the previous release's tests for a patch or minor, and updates `vcpkg.json` plus
+`UWL_VERSION` / `UWL_HEADER_SHA512` / `UWL_LICENSE_SHA512` in
+`ports/universal-wasm-loader-c/portfile.cmake` from the committed files. It then
+commits the bump, writes and commits the `versions/` entry (§4), and pushes `main`,
+with no tag. On that push, `.github/workflows/vcpkg-release.yml` checks the
+commit and builds the port on three platforms. Only then does it create the tag
+`v<version>` and the GitHub Release page, then install the version from this
+registry the way a user does. `make release-dry-run KIND=…` runs the guards and
+the gate only. A tag never moves: consumers' sha512 pins are taken from it.
 
 ## 1. Get vcpkg
 
@@ -128,9 +128,10 @@ After editing the port, the `git-tree` recorded in
 `versions/u-/universal-wasm-loader-c.json` must be updated to the new port tree,
 or registry installs fail the git-tree check.
 
-`vcpkg x-add-version` is the usual tool, but it expects a full vcpkg-root layout
-(`scripts/vcpkg-tools.json`) that this minimal registry doesn't have, so we
-maintain it by hand — the value is just `git rev-parse HEAD:ports/<port>`:
+For a release, `make release` writes this entry itself (§0). For a port change
+outside a release, `vcpkg x-add-version` is the usual tool, but it expects a full
+vcpkg-root layout (`scripts/vcpkg-tools.json`) that this minimal registry doesn't
+have, so it is done by hand. The value is just `git rev-parse HEAD:ports/<port>`:
 
 ```sh
 git add ports/universal-wasm-loader-c && git commit -m "port: <change>"

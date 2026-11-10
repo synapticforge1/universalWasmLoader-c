@@ -200,9 +200,10 @@ declaration in the header's public section, plus the loader SPEC version it conf
 snapshotted in [`api-surface.json`](api-surface.json), and a release is gated against it: anything
 removed or changed requires a major version, anything added at least a minor, and a patch or minor
 release must also pass the previous release's test suite unmodified. Removals are deprecated for at
-least one minor release first and listed below. Releases after 2.1.0 each get a
-[GitHub Release page](https://github.com/synapticforge1/universalWasmLoader-c/releases), made by CI
-once every check on the tag has passed.
+least one minor release first and listed below. CI makes each release: it checks the
+commit, then creates the `v<version>` tag, the
+[GitHub Release page](https://github.com/synapticforge1/universalWasmLoader-c/releases) (releases
+after 2.1.0), and installs the version from this registry as a user would.
 
 ### ⚠️ Breaking Changes
 

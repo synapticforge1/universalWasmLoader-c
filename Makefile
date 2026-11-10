@@ -50,7 +50,7 @@ endif
 
 TEST_BIN = tests/spec_tests$(EXE)
 
-.PHONY: all test fetch clean print-sdk surface surface-check compat compat-selftest release-selftest bump
+.PHONY: all test fetch clean print-sdk surface surface-check compat compat-selftest release-selftest bump release release-dry-run
 
 all: test
 
@@ -99,3 +99,11 @@ release-selftest:
 
 bump:
 	bun run scripts/bump.ts $(KIND)
+
+# The release (owner's "release", explicit level): guards, bump commit, registry commit, ONE push of
+# main. CI tags, makes the page, installs from the registry (cmem/compat-gate.md § The release page).
+release:
+	bun run scripts/release.ts $(KIND)
+
+release-dry-run:
+	bun run scripts/release.ts $(KIND) --dry-run
