@@ -16,11 +16,14 @@ No host Python, no committed shell scripts. This file holds only what is specifi
   `scripts/fetch-wasmtime.sh` on 2026-10-22; no shell scripts remain in the repo. The compatibility
   gate (2026-10-22): `scripts/surface.ts`, `compat.ts`, `bump.ts`, `check-compat-gate.ts`, run via
   `make surface | surface-check | compat | compat-selftest | bump KIND=…` ([compat-gate.md](compat-gate.md)).
-  The release page (2026-11-09): `scripts/github-release.ts` (CI only) and
-  `check-github-release.ts` (`make release-selftest`).
-  Besides C, Bun is the only scripting runtime here.
-- **Releases go through `make bump`**, never a hand edit of the version line or the sha512 pins; a
-  surface change is re-baselined (`make surface`) in its own commit before the bump.
+  The release (2026-11-10, H33): `scripts/release.ts` (`make release KIND=…`, `release-dry-run`);
+  CI only: `ci-tag.ts`, `github-release.ts`, `github-api.ts`; their self-test
+  `check-github-release.ts` (`make release-selftest`). Besides C, Bun is the only scripting
+  runtime here.
+- **Releases go through `make release KIND=…`** ([release.md](release.md)), which runs `make
+  bump`; never a hand edit of the version line, the sha512 pins or `versions/`, and **never a
+  hand-made tag** (CI tags, owner's order 2026-11-10). A surface change is re-baselined (`make
+  surface`) in its own commit before the release.
 - **External tools a script spawns run with a relative path and `cwd`**, never an absolute Windows
   path: GNU tar reads `<drive>:\…` as a remote `host:path`.
 - **Machine facts and anything private go in `cmem/local/`** (gitignored, verified with
@@ -49,13 +52,15 @@ A GitHub web-UI task is an OWNER item, never "blocked on gh". Here that means a
 `workflow_dispatch` run of `vcpkg-release.yml` ("Run workflow"). The GitHub Release page is made
 by CI's `release` job through the REST API, never by hand (H32, 2026-11-09; see the next section).
 
-## The release is the CI-made Release page (🔒 owner, 2026-11-09; letter H32)
+## The release: CI checks, CI tags, the page, the registry (🔒 owner, 2026-11-09 / 11-10; H32, H33)
 
-"yes. From this point forward it is the release page." A release is the tag PLUS its Release
-page. The page is made by the `release` job after every other job is green on the tag; how it
-works is in [compat-gate.md](compat-gate.md) § The release page. "Only new tags will get release
-pages": no backfill, so v1.0.0 … v2.1.0 stay without one. If the job fails, the release is
-incomplete. Re-run the failed job (an owner web-UI item); the script is safe to re-run.
+"yes. From this point forward it is the release page" (2026-11-09). "The CI to check first, then
+push the tag, and then create the release page from the tag, then publish the package to the
+registry" (2026-11-10). A release is CI's tag PLUS its Release page PLUS a green registry
+read-back, all from one workflow run on the pushed `main`. How it works, slot by slot, and every
+release so far: [release.md](release.md). "Only new tags will get release pages": no backfill.
+If a job fails, the release is incomplete. "Re-run failed jobs" (an owner web-UI item); every
+job is safe to re-run. Never a new tag for the same code, never a moved tag.
 
 ## Bun version: always the latest installed (🔒 owner, 2026-11-09; Tooling rule 10, letter H31)
 
@@ -73,3 +78,22 @@ step with `GITHUB_TOKEN`, landed before a release and proven by its next real ru
 
 The Makefile's default `CC` is `zig cc`, linked with Zig's `libunwind` everywhere except macOS; see
 [overview.md](overview.md) § "Build / release flow". Other compilers stay supported via `CC=…`.
+
+## Owner commands: "commit", "push", "release" (owner, 2026-11-10)
+
+🔒 Written into every project by the workspace session on the owner's direction (2026-11-10:
+"please write that into each project"; workspace `cmem/working-rules.md` Tooling rule 12, letter
+H34). When the owner says:
+
+- **"commit"** — first run "update the project memory files" (re-derive this repo's `cmem/` from
+  its current state), then commit to the branch being worked on. Nothing is pushed.
+- **"push"** — perform "commit", then merge the branch into `main`, then push `main` (and the
+  working branch) to GitHub (`origin`) and read it back with `git ls-remote`.
+- **"release"** — perform "push", then the release process: the workspace's
+  `cmem/release-process.md` §§ 5–8 — CI checks first, then CI pushes the tag, then the GitHub
+  Release page from the tag, then the publish to the registry — recorded in `cmem/release.md`
+  § "Release History" (newest first, a summary of what changed). The level (patch / minor /
+  major) is the owner's: ask if it was not given.
+
+Each command includes the one before it, and none goes further than its own word (a "commit"
+never pushes, a "push" never releases). This repo's own gate and merge rules apply at each step.

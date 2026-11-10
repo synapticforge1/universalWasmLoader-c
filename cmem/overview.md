@@ -33,37 +33,11 @@ its ecosystem.
 
 ## Current state — v2.1.1
 
-**`v2.1.1`** (2026-11-09, owner: "commit, push then release"): the header is byte-identical to
-2.1.0 (same pins); it is the first release whose GitHub Release page CI made (H32), and the first
-with Bun 1.4.4 in CI (H31). `make bump KIND=patch` gave floor patch; `release: 2.1.1` `85ecd89`;
-registry `dc81b25` (git-tree `2b4ab75a…`, baseline 2.1.1), which the annotated tag points at.
-Every check ran locally before tagging, and `main`'s CI (`42648553716`) was green first. Served
-header and LICENSE = pins. The page `v2.1.1` was made by **`github-actions[bot]`**
-(compat-gate.md § The release page).
-
-**`v2.1.0`** (2026-11-08, owner: "push and release"): `uwl_err` / `UWL_ERR` (C39). `make bump
-KIND=minor` gave floor minor (`added: const UWL_ERR`, `added: fn uwl_err`); the header sha512 was
-re-derived independently; `release: 2.1.0` `edb7b3f`; registry `edc6993` (git-tree `b9ac75ef…`,
-baseline 2.1.0), which the annotated tag points at. Every CI check was run locally BEFORE tagging:
-surface-check, gate self-test 50/50, 93/93, `compat.ts --release` (v2.0.0's 84 tests green).
-Served header and LICENSE = pins. Tag run `42563162790` all green: validate, compat, install
-×3. History of the earlier releases follows.
-
-The header-only loader is implemented and passes the full reference suite. Released tags: `v1.0.0`
-(`4da2c0b`, 2026-06-17), `v1.1.0` (`3aea7bd`, 2026-06-24; adds the convenience call layer; vcpkg
-port-version 2 since 2026-10-20), `v1.1.1` (2026-10-26, owner: "bump and push"): the header is
-byte-identical to 1.1.0 (same sha512 pins); the release carries the workspace reference fixtures
-and the 34-assertion suite (SPEC §10 tested); first release through `make bump` (floor patch,
-v1.1.0's tests green). `v1.1.2` (2026-11-07, owner: "push and release"): the H29 / S8 fix — typed
-accessors fail on a result-kind mismatch instead of reading the wrong union member; new header
-sha512 (recomputed by `bump` from the committed blob and re-derived independently); 43 assertions;
-floor patch vs v1.1.1, v1.1.1's 34 tests green. **`v2.0.0`** (2026-11-07, owner: "release
-2.0.0"): SPEC 4.0.0 (C29; see § SPEC 4.0.0 below), a major. `make bump KIND=major` gave floor
-major; the header sha512 was re-derived independently; `release: 2.0.0` `921b96b`; registry
-`126d361` (git-tree `1b38345e…`, baseline 2.0.0). Served header and LICENSE = pins. The first
-tag run was RED because of a self-test script bug, not the release. The fix is `56217b6`, and the
-tag was MOVED there on the owner's word (release files identical). Run `42398823979` was all green,
-installs on three triplets included (compat-gate.md § First tagged run). Working tree:
+The header-only loader is implemented and passes the full reference suite (93/93). The latest
+release is **v2.1.1** (2026-11-09). **Every release, newest first, with what changed and how it
+was read back, is in [release.md](release.md) § Release History** (the one place since
+2026-11-10, H33 D3). How a release works now (CI checks, then CI tags, then the page, then the
+registry read-back) is in [release.md](release.md) § How a release works. Working tree:
 
 - `universal_wasm_loader.h` — the single-header library (public API + `UWL_IMPLEMENTATION` body).
 - `tests/spec_tests.c` — the SPEC §8 reference suite (84 assertions since 2026-11-07, C29; 93
@@ -266,7 +240,9 @@ re-verify; never edit them here.
   anything; use `make clean test` when the result is meant as evidence. Verified 2026-10-22 (zig
   0.16.0, wasmtime 45.0.2 `x86_64-mingw`, static): `make clean test` (zig cc) → 29/29, and
   `make CC=gcc clean test` → 29/29.
-- **Releasing (2026-10-22):** `make bump KIND=patch|minor|major` — gated by the surface floor and the
+- **Releasing (2026-11-10, H33):** `make release KIND=…` pushes `main` with the bump and the
+  registry entry; CI checks, tags, makes the page and installs from the registry
+  ([release.md](release.md)). It runs `make bump KIND=patch|minor|major`, gated by the surface floor and the
   previous tag's tests; see [compat-gate.md](compat-gate.md) and `docs/vcpkg.md` § 0 / § 4.
 - **Toolchain note (MinGW static link):** `wasi.h` decorates every `_WIN32` symbol
   `__declspec(dllimport)` unless `WASI_API_EXTERN` is pre-defined (unlike `wasm.h`, which already
@@ -293,7 +269,8 @@ re-verify; never edit them here.
   host dep (config is hand-written via `configure_file`), which had forced an MSVC host build. Real
   (non-seeded) installs need the `v<version>` tag on GitHub so the raw-github header/LICENSE
   downloads resolve — `v1.0.0` and `v1.1.0` exist, and real installs were validated 2026-10-20 (see
-  Known gaps). `versions/` is regenerated to the port tree via `vcpkg x-add-version`. See the
+  Known gaps). `versions/` is written by `scripts/release.ts` for a release (since 2026-11-10;
+  by hand before, `vcpkg x-add-version` needing a full vcpkg root). See the
   ecosystem publishing matrix in wasmtk `cmem/vision.md`.
 
 ## Known gaps / not yet done
@@ -312,28 +289,29 @@ re-verify; never edit them here.
   as C++; add one to `make test` if it regresses.
 - **Thread-safe pool** (blocking acquire) — the C pool is single-threaded; a future revision could
   add mutex/condvar gating behind a compile flag.
-- **vcpkg port** validated locally on `x64-mingw-dynamic` (2026-06-17). CI (`.github/workflows/vcpkg-release.yml`)
-  runs `validate` on every push/PR and real overlay-port installs on tags or manual dispatch. **Install
-  VALIDATED 2026-10-20** (dispatch run `39518063717`, 1.1.0 port-version 2, downloads from the
-  `synapticforge1` org URLs) on `x64-linux`, `x64-windows` (MSVC) and `arm64-osx`; again for
-  **1.1.1** on the tag push, 2026-10-26 (run `40382759953`, same three triplets, green), and for
-  **1.1.2**, 2026-11-07 (run `42391904762`, green), for **2.0.0**, 2026-11-07 (run
-  `42398823979`, green), and for **2.1.0**, 2026-11-08 (run `42563162790`, green). Not yet
-  install-tested: `x64-windows-static`, `x64-mingw-static`, `arm64-linux`, `x64-osx`.
-- **CI never runs the CURRENT C suite.** `vcpkg-release.yml` is the only workflow; on a push to
-  `main` it runs `validate` (port files, surface check, gate self-test) only. On a tag, `compat`
-  builds and runs the PREVIOUS tag's tests against the new header on Linux: first run 2026-10-26
-  (run `40382759953`, `v1.1.1`: all jobs green, so `make fetch` + `zig cc` + a suite now pass
-  natively on x86_64-linux — v1.1.0's 29 tests). The current 84 assertions (incl. SPEC §10 and the 4.0.0 refusals) are
-  verified only locally (x86_64-mingw). A native macOS build/run has never happened (link-only
-  cross-checks; the `arm64-osx` install job builds the consumer example, it runs no suite). Fix: a
-  `make fetch` + `make clean test` job on Linux/macOS/Windows.
+- **vcpkg port** validated locally on `x64-mingw-dynamic` (2026-06-17). CI
+  (`.github/workflows/vcpkg-release.yml`, since 2026-11-10):
+  - `validate` runs on every push and PR;
+  - for a release, the overlay install aimed at the commit (`install`, before the tag) and the
+    registry-mode install as a user (`publish`, after it), each on `x64-linux`, `x64-windows`
+    and `arm64-osx`;
+  - the overlay install also runs on a manual run.
+
+  Every release's install result is in [release.md](release.md). Not yet install-tested:
+  `x64-windows-static`, `x64-mingw-static`, `arm64-linux`, `x64-osx`.
+- **CI never runs the CURRENT C suite.** On a push to `main`, `validate` checks the port files,
+  the surface and the two self-tests. For a release, `compat` builds and runs the PREVIOUS
+  release's tests against the new header on Linux; it first ran 2026-10-26 (`v1.1.1`), so `make
+  fetch` + `zig cc` + a suite pass natively on x86_64-linux. The current 93 assertions are
+  verified only locally (x86_64-mingw), and `release.ts`'s cold gate runs them before every
+  release. A native macOS build and run has never happened: the install jobs build the port and
+  run no suite. Fix: a `make fetch` + `make clean test` job on Linux, macOS and Windows.
 - **The gate scripts are never type-checked.** Workspace § The gate (2026-10-22): a test task that
   skips type-checking is not a gate, and Bun never type-checks. `scripts/*.ts` run under Bun only.
   Owner, 2026-10-22: RECORD, do not add yet — a `tsc --noEmit` check would need `typescript` +
   Bun's types (a `package.json` in a C repo). Revisit if a script bug slips past the self-test.
 
-## Workspace letters — status for this repo (2026-11-09)
+## Workspace letters — status for this repo (2026-11-10)
 
 From the workspace ledger `../../../cmem/workspace-correspondence.md` (read first since 2026-10-26)
 and the letters in `../../../cmem/handoffs.md`; the workspace sweep reads this section.
@@ -373,7 +351,16 @@ and the letters in `../../../cmem/handoffs.md`; the workspace sweep reads this s
   only Bun version in the tree. Proven by `main`'s run `42648553716` (green).
 - **H30 (no `gh`, in CI too; record-only for this repo)** — recorded 2026-11-09 in
   [working-rules.md](working-rules.md) § "No `gh`". Nothing to change: 0 `gh` hits outside `cmem/`
-  (`git grep -n -w gh -- . ':!cmem'`). The one web-UI task is the owner's `workflow_dispatch`. Answered in the ledger; loader-v verifies and closes.
+  (`git grep -n -w gh -- . ':!cmem'`). The one web-UI task is the owner's "Re-run failed jobs" /
+  `workflow_dispatch`. Answered in the ledger; the workspace verifies and closes.
+- **H33 (the release process, semi-uniform; D1–D3)** — done 2026-11-10 on local `main`
+  (unreleased): the card's "To converge" list. U4 is `scripts/release.ts` (pushes `main` only).
+  D1 is the workflow: checks → CI's tag (`ci-tag.ts`) → the page → `publish`. U10 is the
+  registry-mode install as a user, in CI. U9: no `uses:`, Bun / Zig by sha256, vcpkg by commit,
+  `permissions: {}`, `concurrency`. D3 is [release.md](release.md). Rehearsed before landing
+  ([compat-gate.md](compat-gate.md) § The release page); first measured by the next release.
+- **H34 (the owner's words "commit", "push", "release")** — the workspace's section in
+  [working-rules.md](working-rules.md), kept as written, committed 2026-11-10.
 - **C30 / C34 (release-workflow hazards; from S3D-ReportCompiler, record-only)** — read
   2026-11-08 (reasoned, not measured). Neither applies as written: `vcpkg-release.yml` has no
   `id-token`, uses no secret, and publishes to no registry (the tag is the release, which a person

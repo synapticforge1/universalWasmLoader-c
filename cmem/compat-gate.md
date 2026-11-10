@@ -14,7 +14,7 @@ Modelled on loader-js's (`../universalWasmLoader-js/cmem/compat-gate.md`).
 | Rule 4, deprecate first | README `### ⚠️ Breaking Changes` table | by hand, when a deprecation lands |
 | Rule 5, re-baseline alone | `surface-check` | an intended surface change is its own commit (`make surface`), with the reason |
 | Self-test | `scripts/check-compat-gate.ts` (50 checks, 2026-10-22) | `make compat-selftest`, CI `validate` |
-| Release page | `scripts/github-release.ts` + its self-test (13 checks, 2026-11-09) | CI `release` job on a tag; `make release-selftest` (§ The release page) |
+| Release (D1) | `scripts/release.ts`; CI `ci-tag.ts` + `github-release.ts` + their self-test (31 checks, 2026-11-10) | `make release KIND=…`; CI on the pushed `main` (§ The release page; [release.md](release.md)) |
 
 **The surface of this loader:** the header's public region (between `#define
 UNIVERSAL_WASM_LOADER_H` and `#ifdef UWL_IMPLEMENTATION`, comments and `__cplusplus` guards
@@ -71,53 +71,37 @@ The self-test's first run found a real bug: the SPEC regex matched an implementa
 ("SPEC v3.0.0 callee-allocated return"), so deleting the conformance line went unnoticed; it now
 reads only the leading comment.
 
-## First tagged run — v1.1.1, 2026-10-26
+## Tagged runs
 
-- Run `40382759953` on tag `v1.1.1` (`6cda558`): **all green** — `validate`, `compat`, and
-  `install` on `x64-windows`, `arm64-osx`, `x64-linux`. The `compat` job's first run was the first
-  native Linux `zig cc` build and run of a suite here (Zig 0.16.0 via `mlugg/setup-zig@v2`, Bun
-  1.4.3 via `oven-sh/setup-bun@v2`): `compat.ts --release` = floor patch, v1.1.0's 29 tests against
-  the 1.1.1 header. Read from the run's job conclusions (public API); the job log was not read.
-- Run `42391904762` on tag `v1.1.2` (`22f9eac`, 2026-11-07): all green again — `validate`,
-  `compat` (v1.1.1's 34 tests against the 1.1.2 header, Linux), `install` on the same three
-  triplets; `main`'s run `42391902045` green. Job conclusions read from the public API.
-- Run `42398405077` on tag `v2.0.0` (`126d361`, 2026-11-07): **RED, and the release itself is
-  not at fault.** `validate` passed every pin, version and git-tree step and the surface check;
-  the gate SELF-TEST failed, so `compat` and `install` were skipped. Cause: the self-test's SPEC
-  mutations hard-coded `SPEC v3.0.0`, and `e97218f` moved the header to v4.0.0 (the self-test was
-  run before that commit, not after it). Fixed on `main` (`scripts/check-compat-gate.ts` now reads
-  the version from the header's conformance line; 50/50; inverted, one case → 49/1). The tag was
-  NOT moved. Covered instead: raw GitHub serves `v2.0.0`'s header and LICENSE with the pinned
-  sha512 (all 128 digits); `compat.ts --release` run locally → "a major step from v1.1.2", exit 0.
-  **Then RE-TAGGED (owner: "option 3", 2026-11-07):** `v2.0.0` moved from `126d361` to `56217b6`,
-  which is byte-identical in header, LICENSE, `ports/` and `versions/`, so the pins and the
-  git-tree held. Run `42398823979` on the new tag: **all green**, i.e. `validate`, `compat`, and
-  `install` on `x64-windows`, `arm64-osx`, `x64-linux`. The served header was re-hashed after the
-  move and equals the pin. Anyone who fetched the tag in the minutes before holds the old
-  annotated tag object (`1ba8761`), whose files are the same.
-- Run `42563162790` on tag `v2.1.0` (`edc6993`, 2026-11-08): all green — `validate`, `compat`
-  (floor minor; v2.0.0's 84 tests against the 2.1.0 header), `install` ×3. Every one of those
-  checks was run locally before the tag was pushed, as the lesson below says.
-  **Lesson:** after any header edit, run `make surface-check compat-selftest`, not only `make test`.
-- Still not covered: CI runs the PREVIOUS tag's tests, never the current `tests/spec_tests.c` (34
-  since 2026-10-26) — see overview § Known gaps. The `validate` additions (surface `--check`,
-  self-test) have run green on Linux since run `39804596951` (2026-10-22).
+Every release's CI run, with what was read back, is recorded in [release.md](release.md) §
+Release History (moved there 2026-11-10, H33 D3).
 
-## The release page (workspace H32, added 2026-11-09)
+- **Lesson (2.0.0's red tag run):** after any header edit, run `make surface-check
+  compat-selftest`, not only `make test`. The gate's self-test matches header lines literally, and
+  `release.ts`'s cold gate now runs it before every release.
+- **Still not covered:** CI runs the PREVIOUS tag's tests (`compat`), never the current
+  `tests/spec_tests.c`. See overview § Known gaps.
 
-🔒 Owner, 2026-11-09: **"yes. From this point forward it is the release page."** From the first
-tag cut after this landed, a release here is its GitHub Release page, made by CI. Earlier tags
-(v1.0.0 … v2.1.0, six of them) keep no page: "only new tags will get release pages."
+## The release page, and CI's tag (H32 2026-11-09; H33 / D1 2026-11-10)
+
+🔒 Owner, 2026-11-09: **"yes. From this point forward it is the release page."** Earlier tags
+(v1.0.0 … v2.1.0) keep no page: "only new tags will get release pages." 🔒 Owner, 2026-11-10
+(D1): CI checks first, then CI makes the tag, then the page from the tag, then the publish. How
+the whole release runs, slot by slot, is in [release.md](release.md) § How a release works. This
+section holds the design and the measurements.
 
 | Piece | File | Runs in |
 | --- | --- | --- |
-| The job | `vcpkg-release.yml` `release`: tags only, `needs: [validate, compat, install]`, `contents: write` only, no `uses:` | after every other job is green on the tag |
-| The script | `scripts/github-release.ts` (Bun, REST API, `GITHUB_TOKEN`) | that job |
-| Its self-test | `scripts/check-github-release.ts` (mock API on `Bun.serve`, 13 checks) | `make release-selftest`, CI `validate` |
+| The release script | `scripts/release.ts` (bump commit, registry commit, ONE push of `main`, no tag) | `make release KIND=…`, the owner's machine |
+| "Is this a release?" + the tag | `scripts/ci-tag.ts state` / `create` (REST API) | CI `validate` / `tag` |
+| The page | `scripts/github-release.ts` (REST API; the tag from `RELEASE_TAG`) | CI `release`, after `tag` |
+| Shared HTTP + peel | `scripts/github-api.ts` (30 s per request, the body included) | both scripts |
+| Their self-test | `scripts/check-github-release.ts` (mock API on `Bun.serve`, 31 checks) | `make release-selftest`, CI `validate`, `release.ts`'s cold gate |
+| The publish read-back | `vcpkg-release.yml` `publish` (registry-mode install as a user, 3 OSes, fatal) | CI, after `release` |
 
-The job clones without credentials and checks HEAD = `github.sha`. It installs Bun itself, pinned
-by sha256, because `oven-sh/setup-bun` takes `github.token` by default (C30). The script follows
-H32's order:
+Every job clones without credentials and checks HEAD = `github.sha`. No job runs a `uses:` action:
+`oven-sh/setup-bun` would take `github.token` by default (C30), so Bun, Zig and vcpkg are fetched
+pinned instead. `github-release.ts` follows H32's order:
 
 1. The tag exists on GitHub and peels, annotated tags followed, to `GITHUB_SHA`. This comes first
    because `POST /releases` would CREATE a missing tag (loader-rs's hazard).
@@ -128,7 +112,7 @@ H32's order:
 Every request has a 30 s limit (`UWL_HTTP_TIMEOUT_MS`), covering the body too. The script is
 adapted from loader-rs's.
 
-**Measured 2026-11-09:**
+**Measured 2026-11-09 (H32, the page alone, then tag-triggered):**
 
 - Self-test 13/13.
 - Inverted with three one-line mutants, each catching only its own case:
@@ -152,6 +136,40 @@ The per-job conclusions were NOT read: the public REST API's 60-per-hour unauthe
 was spent, because a 20 s poller is too fast. Poll at 2–3 minutes, or read `releases.atom` and
 the page, which are not rate-limited. The `main` run before the tag (`42648553716`, on `b794dd2`)
 was green, the first run of Bun 1.4.4 and the release self-test in `validate`.
+
+**Rehearsed 2026-11-10, before landing (H33 / D1; best-practices 7.22):**
+
+- **Self-test:** 31/31 (13 page cases, 6 `state`, 9 `create`, plus 3 output checks).
+- **Six one-line mutants, each caught only by its own case:**
+  - `create` without the "tag elsewhere" refusal → 30 / 1;
+  - `state` calling an already-released version a release → 30 / 1;
+  - `create` without its read-back → 30 / 1;
+  - the page without its sha check → 29 / 2;
+  - the page without its existing-page check → 30 / 1;
+  - no time limit → 30 / 1.
+- **`ci-tag.ts` read-only against real GitHub:**
+  - `state`: `dc81b25` (v2.1.1's commit) → `release=true`, "a re-run"; `2bbf89e` → `release=false`,
+    "an ordinary push"; a pull request → `release=false`.
+  - `create --dry-run`: at `dc81b25`, "nothing to do"; at `2bbf89e`, refused ("a tag never
+    moves").
+- **The workflow's install steps, run locally with the same commands (x64-mingw-dynamic):**
+  - the overlay port aimed at commit `2bbf89e` (2 URLs rewritten) installed; vcpkg checked the pins;
+    copyright OK;
+  - the registry-mode install as a user (baseline `2bbf89e`, vcpkg baseline tag 2026.10.16) installed
+    2.1.1; the read-back passed;
+  - inverted: an expected 9.9.9 → fails; a one-byte header change → fails.
+- **`release.ts` against a scratch bare remote** (GitHub untouched):
+  - refused: no level; an untracked file; `main` ahead of the remote; the tag already on the remote;
+  - `--dry-run`: the cold gate ran (93/93, floor patch), nothing edited;
+  - a real `patch`: two commits (`bump to v2.1.2` touching only `ports/`; the registry entry
+    touching only `versions/`), ONE push, remote `main` = HEAD, **no tag anywhere**;
+  - its files pass every `validate` check: version 2.1.2 in both, `versions[0]` git-tree = the
+    port tree, baseline 2.1.2, header pin = HEAD blob.
+- **`Bun.YAML` parse of the workflow:** six jobs; `permissions: {}`; only `tag` / `release` write;
+  0 `uses:`, 0 `gh`, 0 `1.4.3`.
+- **The first real run is the next release.** UNMEASURED on GitHub until then: the `tag` job's
+  POSTs, the `publish` job on three OSes, and the `install` job's overlay aimed at a commit on
+  macOS / Windows.
 
 ## Traps met building it
 
