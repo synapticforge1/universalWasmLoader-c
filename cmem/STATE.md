@@ -7,7 +7,7 @@ Updated: 2026-11-24, at the end of the session
 - Working branch: main
 
 ## Now
-- Adopted the workspace review standard (H37), memory guide (H38) and letters H40–H43; unpushed.
+- Adopted the workspace review standard (H37), memory guide (H38) and letters H40–H43; pushed 2026-11-24.
 - CI only publishes now (validate, tag, release, publish); every test and gate runs locally.
 - The fixtures stamp waits on loader-js (C49, open-work.md OW10).
 
@@ -24,7 +24,6 @@ Updated: 2026-11-24, at the end of the session
 4. Take the new fixtures stamp once loader-js has re-stamped (OW10).
 
 ## Waiting on owner
-- The push of this session's commits.
 - The test machines for the `pending` platforms (platforms.md).
 
 ## Read next
