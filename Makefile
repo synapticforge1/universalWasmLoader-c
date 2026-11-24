@@ -4,6 +4,7 @@
 # Override WASMTIME_VERSION / WASMTIME_PLATFORM to match your toolchain.
 
 WASMTIME_VERSION  ?= 45.0.2
+# platform: win-x64 — the default SDK is the dev machine's (cmem/platforms.md)
 WASMTIME_PLATFORM ?= x86_64-mingw
 WASMTIME_SDK      ?= vendor/wasmtime-v$(WASMTIME_VERSION)-$(WASMTIME_PLATFORM)-c-api
 
@@ -19,6 +20,7 @@ LIBDIR   = -L$(WASMTIME_SDK)/lib
 
 # wasmtime's static lib pulls in these system libraries on Windows/MinGW.
 # On Linux/macOS only -lpthread (+ -lm -ldl) are needed; override SYSLIBS.
+# platform: win-x64 (the first branch); linux-x64, linux-arm64, mac-x64, mac-arm64 (the else branch)
 ifeq ($(OS),Windows_NT)
   SYSLIBS ?= -lws2_32 -lbcrypt -luserenv -lntdll -lole32 -lShlwapi -ladvapi32 \
              -lkernel32 -luuid -lpthread
@@ -33,6 +35,7 @@ endif
 # _GCC_specific_handler). gcc links that implicitly; zig cc does not, so link
 # zig's bundled LLVM libunwind, which provides the same symbols. macOS is
 # exempt: libSystem already carries the unwinder.
+# platform: mac-x64, mac-arm64 — no -lunwind there (cmem/platforms.md)
 ifneq ($(findstring zig,$(CC)),)
   ifneq ($(UNAME_S),Darwin)
     SYSLIBS += -lunwind
@@ -50,7 +53,7 @@ endif
 
 TEST_BIN = tests/spec_tests$(EXE)
 
-.PHONY: all test fetch clean print-sdk surface surface-check compat compat-selftest release-selftest bump release release-dry-run
+.PHONY: all test fetch clean print-sdk surface surface-check compat compat-selftest release-selftest privacy review-gate gates-test cmem-check bump release release-dry-run
 
 all: test
 
@@ -96,6 +99,21 @@ compat-selftest:
 # The release-page script against a mock GitHub API (cmem/compat-gate.md § The release page).
 release-selftest:
 	bun run scripts/check-github-release.ts
+
+# Gates of the review standard (workspace letter H37), all LOCAL: the privacy and credential scan,
+# the review gate (a completed review covers HEAD), and their own tests.
+privacy:
+	bun scripts/check-privacy.ts
+
+review-gate:
+	bun scripts/review-gate.ts
+
+gates-test:
+	bun test scripts/
+
+# The project memory size check (workspace memory guide, letter H38); run at the end of every session.
+cmem-check:
+	bun scripts/check-cmem.ts
 
 bump:
 	bun run scripts/bump.ts $(KIND)

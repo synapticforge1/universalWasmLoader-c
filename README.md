@@ -193,6 +193,17 @@ the include path, the wasmtime library, and the platform system libraries into
 that one target. See [`docs/vcpkg.md`](docs/vcpkg.md) for registry setup and the
 quick overlay-port path.
 
+## Platforms
+
+The port supports Windows x64, Linux x64 and arm64, and macOS x64 and arm64.
+
+- **Tested on (2.1.1):** Windows (`win-x64`): the full test suite, built with `zig cc` against the
+  `x86_64-mingw` wasmtime C API.
+- **Installed by CI for each release**, without running the suite, on GitHub's `x64-linux`,
+  `x64-windows` and `arm64-osx` runners (2.1.1: the port as an overlay; from the next release on,
+  through this registry as a user installs it).
+- **Other platforms:** not yet tested.
+
 ## Versioning & breaking changes
 
 Releases follow [Semantic Versioning 2.0.0](https://semver.org). The public surface — every
@@ -200,8 +211,8 @@ declaration in the header's public section, plus the loader SPEC version it conf
 snapshotted in [`api-surface.json`](api-surface.json), and a release is gated against it: anything
 removed or changed requires a major version, anything added at least a minor, and a patch or minor
 release must also pass the previous release's test suite unmodified. Removals are deprecated for at
-least one minor release first and listed below. CI makes each release: it checks the
-commit, then creates the `v<version>` tag, the
+least one minor release first and listed below. Every test runs before a release is pushed; CI
+then verifies the version, creates the `v<version>` tag, the
 [GitHub Release page](https://github.com/synapticforge1/universalWasmLoader-c/releases) (releases
 after 2.1.0), and installs the version from this registry as a user would.
 

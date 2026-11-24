@@ -70,6 +70,10 @@ CMakeFiles/
 # Private, machine-local memory (workspace rule: no personal information committed)
 cmem/local/
 
+# Open review issues: never published (workspace review standard § 10, letter H37 (b));
+# scripts/check-privacy.ts refuses it if it is ever force-added
+cmem/review-issues.md
+
 # Tool and IDE settings record local paths; never tracked (workspace rule, 2026-10-22)
 .vscode/
 .claude/settings.local.json

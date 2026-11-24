@@ -5,22 +5,29 @@
 //   bun run scripts/release.ts patch|minor|major [--dry-run]     (or: make release KIND=minor)
 //
 // Guards, each refusing with exit 1:
+//   - FIRST, the review gate (workspace review standard § 9, letter H37 (d); `review-gate.ts`): the
+//     five required reviews were completed on this code — `cmem/review-process.md` records
+//     `Review complete: <commit>`, an ancestor of HEAD, with nothing outside `cmem/` changed since;
 //   - on `main`, the tree clean (untracked files count), `main` equal to GitHub's (`ls-remote`);
 //   - the next tag absent here AND on GitHub, and the registry (`versions/`) without the version;
-//   - the cold gate: surface check, both self-tests, `make clean test`;
+//   - the cold gate, every gate LOCAL (H37 § 10: none is repeated on GitHub): the privacy gate over
+//     the tree and the commits since the last release, the gates' own tests, the surface check,
+//     both self-tests, `make clean test`;
 //   - `make bump` itself: the floor from the surface diff, the previous release's tests (U3).
 // --dry-run stops after the guards and prints the floor and the plan; nothing is edited.
 //
 // Then: the bump is its own commit, made here (`bump to vX.Y.Z`, U2); the registry entry
 // (`versions/`: the new port git-tree first, the baseline) is a second commit; both are checked
 // again (git-tree = HEAD's port tree, sha512 pins = HEAD's blobs) and `main` is pushed — as a
-// user, ONE push, read back with `ls-remote`. **No tag is made or pushed, ever** (U4): CI checks
-// that commit, then tags it, makes the Release page and installs it from the registry
-// (.github/workflows/vcpkg-release.yml; cmem/compat-gate.md § The release page).
+// user, ONE push, read back with `ls-remote`. **No tag is made or pushed, ever** (U4): CI verifies
+// the version, then tags it, makes the Release page and installs it from the registry
+// (.github/workflows/vcpkg-release.yml; cmem/release.md § How a release works). It prints the
+// `Tested on:` line for the release record: the platform this gate ran on (workspace platforms.md).
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { arch, platform, release as osRelease, tmpdir } from "node:os";
 import { join } from "node:path";
-import { LEVELS, type Level, bumpVersion, manifestVersion } from "./compat.ts";
+import { LEVELS, type Level, bumpVersion, manifestVersion, releaseTags } from "./compat.ts";
+import { check as reviewGate } from "./review-gate.ts";
 import { ROOT } from "./surface.ts";
 
 const VERSIONS = join(ROOT, "versions/u-/universal-wasm-loader-c.json");
@@ -51,6 +58,11 @@ const dryRun = args.includes("--dry-run");
 for (const a of args.slice(1)) if (a !== "--dry-run") refuse(`unknown argument "${a}"`);
 if (!LEVELS.includes(level)) refuse("usage: bun run scripts/release.ts patch|minor|major [--dry-run] — the level is the owner's; there is no default");
 
+// ── first: the review set was completed on this code (H37 (d)) ───────────────
+const review = reviewGate(ROOT);
+if (review.refusals.length > 0) refuse(`review gate: ${review.refusals.join("; ")}`);
+console.log(`review gate: ${review.candidate} is covered by the review of ${review.reviewed}`);
+
 // ── guards ────────────────────────────────────────────────────────────────────
 if (git(["rev-parse", "--abbrev-ref", "HEAD"]) !== "main") refuse("not on main; \"push\" (merge into main) comes first");
 const dirty = git(["status", "--porcelain", "--untracked-files=all"]);
@@ -70,6 +82,9 @@ const versions = JSON.parse(readFileSync(VERSIONS, "utf8"));
 if (versions.versions.some((v: { version: string }) => v.version === next)) refuse(`versions/ already lists ${next}`);
 
 console.log(`\nrelease ${current} -> ${next} (${level}); the cold gate:`);
+const lastTag = releaseTags()[0];
+run(["bun", "scripts/check-privacy.ts", ...(lastTag ? ["--commits", `${lastTag}..HEAD`] : [])], "the privacy gate");
+run(["bun", "test", "scripts/"], "the gates' own tests (bun test scripts/)");
 run(["make", "-s", "surface-check"], "make surface-check");
 run(["make", "-s", "compat-selftest"], "make compat-selftest");
 run(["make", "-s", "release-selftest"], "make release-selftest");
@@ -77,12 +92,16 @@ const tests = run(["make", "-s", "clean", "test"], "make clean test");
 const counts = [...tests.matchAll(/(\d+) passed, (\d+) failed/g)].at(-1);
 if (!counts || counts[2] !== "0" || counts[1] === "0") refuse(`make clean test: ${counts?.[0] ?? "no result line"}`);
 console.log(`  tests: ${counts[0]}`);
+// The platform this gate ran on, for the release record (workspace platforms.md: "Tested on:").
+const PLATFORM_ID: Record<string, string> = { win32: "win", darwin: "mac", linux: "linux" };
+const testedOn = `${PLATFORM_ID[platform()] ?? platform()}-${arch() === "arm64" ? "arm64" : "x64"}`;
+console.log(`  Tested on: ${platform()} ${osRelease()} (${testedOn}) — record it in cmem/release.md and on the page`);
 
 if (dryRun) {
   console.log(run(["bun", "run", "scripts/compat.ts", "--no-tests"], "compat (floor report)").trim());
   console.log(`\ndry-run: every guard passed. A real run would: make bump KIND=${level} (floor + previous-tag tests),`);
   console.log(`commit "bump to ${tag}", write and commit the registry entry, push main, and read it back.`);
-  console.log(`CI then checks that commit, tags ${tag}, makes the page and installs ${next} from the registry.`);
+  console.log(`CI then verifies the version, tags ${tag}, makes the page and installs ${next} from the registry.`);
   process.exit(0);
 }
 
@@ -125,5 +144,5 @@ const pushed = git(["rev-parse", "HEAD"]);
 git(["push", "origin", "main"], "git push origin main");
 const back = git(["ls-remote", "origin", "refs/heads/main"]).split(/\s+/)[0];
 if (back !== pushed) refuse(`read-back: GitHub's main is ${back}, not ${pushed}`);
-console.log(`\npushed main = ${pushed} (read back). No tag was made: CI checks this commit, then tags ${tag},`);
+console.log(`\npushed main = ${pushed} (read back). No tag was made: CI verifies the version, then tags ${tag},`);
 console.log(`makes the Release page from the tag, and installs ${next} from the registry as a user.`);

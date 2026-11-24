@@ -1,22 +1,25 @@
 name: vcpkg release
 
-# The release, in the owner's order (2026-11-10, workspace letter H33): "the CI to check first,
-# then push the tag, and then create the release page from the tag, then publish". Nobody tags by
-# hand: `scripts/release.ts` (make release KIND=…) pushes `main` with the bump and the registry
-# entry, and this workflow, on that push:
+# CI only PUBLISHES (owner, 2026-11-17, workspace letter H37 (e): "We want the CI to verify the
+# version, then tag, create the release page and publish, and skip any version already published").
+# Every test and gate — the reference suite, the surface floor, the previous release's tests, the
+# self-tests, the review and privacy gates — runs LOCALLY in `scripts/release.ts` before it pushes
+# (cmem/release.md § How a release works). Nobody tags by hand: `release.ts` (make release KIND=…)
+# pushes `main` with the bump and the registry entry, and this workflow, on that push, in the
+# owner's order of 2026-11-10 (H33):
 #
-#   validate ─┬─ compat  ─┐                                   (checks, on the pushed commit)
-#             └─ install ─┴─ tag ── release ── publish        (only for a new version, in order)
+#   validate ── tag ── release ── publish        (tag / release / publish only for a new version)
 #
-# `validate` also decides "is this a release?": a push (or manual run) on main whose port version
-# has no tag yet, or whose tag is already on this commit (a re-run). For this git-tag registry the
-# tag IS the publish (the port downloads the header from it); `publish` then installs the version
-# through the registry exactly as a user does, and fails unless it gets that version and header.
-# A failed run is re-run ("Re-run failed jobs"); every job skips what is already done. A tag is
-# never moved or made by hand (cmem/compat-gate.md § The release page).
+# `validate` verifies the version (HEAD = the pushed commit; the pins, the port version and the
+# registry entry agree, which is what a vcpkg git registry publishes) and decides "is this a
+# release?": a push (or manual run) on main whose port version has no tag yet, or whose tag is
+# already on this commit (a re-run). For this git-tag registry the tag IS the publish (the port
+# downloads the header from it); `publish` then installs the version through the registry exactly
+# as a user does, and fails unless it gets that version and header. A failed run is re-run ("Re-run
+# failed jobs"); every job skips what is already done. A tag is never moved or made by hand.
 #
-# Pins (H33 U9): no `uses:` at all; git clones are credential-less; Bun, Zig and vcpkg are pinned
-# by version AND sha256 / commit. `permissions: {}` at the top; each job holds only its own.
+# Pins (H33 U9): no `uses:` at all; git clones are credential-less; Bun and vcpkg are pinned by
+# version AND sha256 / commit. `permissions: {}` at the top; each job holds only its own.
 
 on:
   push:
@@ -35,18 +38,16 @@ defaults:
     shell: bash
 
 # The latest installed Bun (workspace Tooling rule 10, letter H31): BUN_SHA256 is bun-linux-x64.zip's
-# in that release's SHASUMS256.txt. ZIG_SHA256: zig-x86_64-linux-<v>.tar.xz in ziglang.org's
-# download index (re-hashed from the download, 2026-11-10). VCPKG_COMMIT: microsoft/vcpkg tag
-# 2026.10.16 (peeled). Move each version and its hash together.
+# in that release's SHASUMS256.txt (re-hashed from the download, 2026-11-24). VCPKG_COMMIT:
+# microsoft/vcpkg tag 2026.10.16 (peeled). Move each version and its hash together.
 env:
-  BUN_VERSION: "1.4.4"
-  BUN_SHA256: bf8ccbfb2b0b80159e0f9a6d15c55317add8077534dbc6130a3edb52fccb395c
-  ZIG_VERSION: "0.16.0"
-  ZIG_SHA256: 70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00
+  BUN_VERSION: "1.4.5"
+  BUN_SHA256: 94559b3b528995a49452f9f2404cec74f2efd7d06e0a000a8cd214b02c3666eb
   VCPKG_COMMIT: 9eec002df1cd109f8f104cd966a763daf9751489
 
 jobs:
   validate:
+    # Verifies the version; tests nothing (they ran locally before the push).
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -92,105 +93,17 @@ jobs:
           unzip -q "$RUNNER_TEMP/bun.zip" -d "$RUNNER_TEMP" && mkdir -p "$HOME/.bun/bin" && mv "$RUNNER_TEMP/bun-linux-x64/bun" "$HOME/.bun/bin/"
           echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
           "$HOME/.bun/bin/bun" --version
-      - name: api-surface.json is current (compatibility gate, Rule 1)
-        run: bun run scripts/surface.ts --check
-      - name: Compatibility gate self-test
-        run: bun run scripts/check-compat-gate.ts
-      - name: Release scripts self-test (mock GitHub API)
-        run: bun run scripts/check-github-release.ts
       - name: Is this a release?
         id: state
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: bun scripts/ci-tag.ts state
 
-  compat:
-    # The compatibility gate on the release commit (Rules 2 + 3, cmem/compat-gate.md): the version
-    # meets the floor vs the previous tag; a patch or minor passes the previous tag's tests.
-    if: needs.validate.outputs.release == 'true'
-    needs: validate
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout this commit with the tags (no credentials)
-        run: |
-          git clone -q "https://github.com/$GITHUB_REPOSITORY" . && git checkout -q "$GITHUB_SHA"
-          [ "$(git rev-parse HEAD)" = "$GITHUB_SHA" ] || { echo "::error::HEAD is not $GITHUB_SHA"; exit 1; }
-      - name: Install Bun and Zig (pinned by sha256)
-        run: |
-          curl -fsSL --retry 6 --retry-delay 10 --retry-all-errors --connect-timeout 30 --max-time 300 \
-            -o "$RUNNER_TEMP/bun.zip" "https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-linux-x64.zip"
-          echo "${BUN_SHA256}  $RUNNER_TEMP/bun.zip" | sha256sum -c -
-          unzip -q "$RUNNER_TEMP/bun.zip" -d "$RUNNER_TEMP" && mkdir -p "$HOME/.bun/bin" && mv "$RUNNER_TEMP/bun-linux-x64/bun" "$HOME/.bun/bin/"
-          curl -fsSL --retry 6 --retry-delay 10 --retry-all-errors --connect-timeout 30 --max-time 600 \
-            -o "$RUNNER_TEMP/zig.tar.xz" "https://ziglang.org/download/${ZIG_VERSION}/zig-x86_64-linux-${ZIG_VERSION}.tar.xz"
-          echo "${ZIG_SHA256}  $RUNNER_TEMP/zig.tar.xz" | sha256sum -c -
-          mkdir -p "$HOME/zig" && tar -xJf "$RUNNER_TEMP/zig.tar.xz" -C "$HOME/zig" --strip-components=1
-          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"; echo "$HOME/zig" >> "$GITHUB_PATH"
-          "$HOME/.bun/bin/bun" --version; "$HOME/zig/zig" version
-      - name: Fetch the wasmtime C API
-        run: make fetch WASMTIME_PLATFORM=x86_64-linux
-      - name: Floor and previous-tag tests
-        run: WASMTIME_PLATFORM=x86_64-linux bun run scripts/compat.ts --release
-
-  install:
-    # The port, built and installed on three platforms BEFORE the tag exists: an overlay copy of
-    # the port whose header / LICENSE downloads name this commit instead of v<version> (the same
-    # bytes, so the sha512 pins still decide). Also runs on a manual run.
-    if: needs.validate.outputs.release == 'true' || github.event_name == 'workflow_dispatch'
-    needs: validate
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            triplet: x64-linux
-          - os: macos-latest
-            triplet: arm64-osx
-          - os: windows-latest
-            triplet: x64-windows
-    runs-on: ${{ matrix.os }}
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout this commit (no credentials)
-        run: |
-          git init -q . && git remote add origin "https://github.com/$GITHUB_REPOSITORY"
-          git fetch -q --depth=1 origin "$GITHUB_SHA" && git checkout -q FETCH_HEAD
-          [ "$(git rev-parse HEAD)" = "$GITHUB_SHA" ] || { echo "::error::HEAD is not $GITHUB_SHA"; exit 1; }
-      - name: Bootstrap vcpkg (pinned commit)
-        run: |
-          v="$RUNNER_TEMP/vcpkg"
-          git init -q "$v" && git -C "$v" fetch -q --depth=1 https://github.com/microsoft/vcpkg "$VCPKG_COMMIT" && git -C "$v" checkout -q FETCH_HEAD
-          if [ "$RUNNER_OS" = "Windows" ]; then "$v/bootstrap-vcpkg.bat" -disableMetrics; else "$v/bootstrap-vcpkg.sh" -disableMetrics; fi
-      - name: Overlay port pointed at this commit
-        run: |
-          mkdir -p "$RUNNER_TEMP/overlay" && cp -R ports/universal-wasm-loader-c "$RUNNER_TEMP/overlay/"
-          pf="$RUNNER_TEMP/overlay/universal-wasm-loader-c/portfile.cmake"
-          n=$(grep -c 'universalWasmLoader-c/v${UWL_VERSION}/' "$pf")
-          [ "$n" = "2" ] || { echo "::error::expected 2 tag URLs in the portfile, found $n"; exit 1; }
-          sed -i.bak "s#universalWasmLoader-c/v\${UWL_VERSION}/#universalWasmLoader-c/${GITHUB_SHA}/#" "$pf" && rm -f "$pf.bak"
-          grep -n "raw.githubusercontent" "$pf"
-      - name: Install port (overlay)
-        run: |
-          vcpkg_bin="$RUNNER_TEMP/vcpkg/vcpkg"
-          [ "$RUNNER_OS" = "Windows" ] && vcpkg_bin="$vcpkg_bin.exe"
-          "$vcpkg_bin" install universal-wasm-loader-c \
-            --overlay-ports="$RUNNER_TEMP/overlay" --triplet "${{ matrix.triplet }}"
-      - name: Copyright bundles both licenses (MIT + Apache-2.0 WITH LLVM-exception)
-        run: |
-          cp="$RUNNER_TEMP/vcpkg/installed/${{ matrix.triplet }}/share/universal-wasm-loader-c/copyright"
-          grep -qi 'Permission is hereby granted' "$cp" || { echo "::error::MIT text missing from copyright"; exit 1; }
-          grep -qi 'Apache License' "$cp"            || { echo "::error::wasmtime Apache license missing from copyright"; exit 1; }
-          grep -qi 'LLVM Exception' "$cp"            || { echo "::error::LLVM exception missing from copyright"; exit 1; }
-          echo "copyright OK: $(wc -c < "$cp") bytes"
-
   tag:
-    # CI's tag (H33 U6), only after every check passed on THIS commit. contents: write and
-    # nothing else; no third-party code runs beside the token (C30).
+    # CI's tag (H33 U6), once `validate` verified THIS commit's version (the tests ran locally,
+    # before the push). contents: write and nothing else; no third-party code runs beside the token (C30).
     if: needs.validate.outputs.release == 'true'
-    needs: [validate, compat, install]
+    needs: validate
     runs-on: ubuntu-latest
     permissions:
       contents: write
