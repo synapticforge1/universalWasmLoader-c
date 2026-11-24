@@ -88,6 +88,14 @@ Release History (moved there 2026-11-10, H33 D3).
 self-test steps described below left the workflow and run in `release.ts`'s local gate; `tag` needs
 only `validate`. The design and measurements below are kept as they were measured.
 
+**Rehearsed 2026-11-24, before landing (H37; best-practices 7.22),** `release.ts --dry-run` against a
+scratch bare remote (GitHub untouched): with no review recorded, refused ("run \"review\" first"); with
+`Review complete: 790a3ae` recorded in a `cmem/`-only commit, the whole local gate ran (privacy over
+`v2.1.1..HEAD`, the gates' tests, surface, both self-tests, 93 / 93), printed `Tested on: … (win-x64)`
+and passed; after a README change, refused ("changed since the review … README.md"). The workflow
+parses to `validate` → `tag` → `release` → `publish`, 0 test steps, 0 `uses:`. Unmeasured on GitHub
+until the next release (open-work.md OW11).
+
 🔒 Owner, 2026-11-09: **"yes. From this point forward it is the release page."** Earlier tags
 (v1.0.0 … v2.1.0) keep no page: "only new tags will get release pages." 🔒 Owner, 2026-11-10
 (D1): CI checks first, then CI makes the tag, then the page from the tag, then the publish. How
