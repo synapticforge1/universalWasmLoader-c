@@ -1,6 +1,6 @@
 # The compatibility gate (workspace letter H6, built 2026-10-22)
 
-🔒 Binding (owner, 2026-09-20; workspace `../../../cmem/layout-and-packaging.md` § "The
+🔒 Binding (owner, 2026-09-20; workspace `../../../workspace/cmem/layout-and-packaging.md` § "The
 compatibility gate"): "backward compatible" is a gate result, never a judgment made at bump time.
 Modelled on loader-js's (`../universalWasmLoader-js/cmem/compat-gate.md`).
 
@@ -14,7 +14,7 @@ Modelled on loader-js's (`../universalWasmLoader-js/cmem/compat-gate.md`).
 | Rule 4, deprecate first | README `### ⚠️ Breaking Changes` table | by hand, when a deprecation lands |
 | Rule 5, re-baseline alone | `surface-check` | an intended surface change is its own commit (`make surface`), with the reason |
 | Self-test | `scripts/check-compat-gate.ts` (50 checks, 2026-10-22) | `make compat-selftest`, CI `validate` |
-| Release (D1) | `scripts/release.ts`; CI `ci-tag.ts` + `github-release.ts` + their self-test (31 checks, 2026-11-10) | `make release KIND=…`; CI on the pushed `main` (§ The release page; [release.md](release.md)) |
+| Release (D1) | `release.ts`; CI `ci-tag.ts`, `github-release.ts`, their self-test (31) | `make release KIND=…`; CI on `main` ([release.md](release.md)) |
 
 **The surface of this loader:** the header's public region (between `#define
 UNIVERSAL_WASM_LOADER_H` and `#ifdef UWL_IMPLEMENTATION`, comments and `__cplusplus` guards
@@ -80,9 +80,13 @@ Release History (moved there 2026-11-10, H33 D3).
   compat-selftest`, not only `make test`. The gate's self-test matches header lines literally, and
   `release.ts`'s cold gate now runs it before every release.
 - **Still not covered:** CI runs the PREVIOUS tag's tests (`compat`), never the current
-  `tests/spec_tests.c`. See overview § Known gaps.
+  `tests/spec_tests.c`. See [open-work.md](open-work.md).
 
 ## The release page, and CI's tag (H32 2026-11-09; H33 / D1 2026-11-10)
+
+**Since 2026-11-24 (H37 (e)) CI only publishes:** the `compat` and `install` jobs and `validate`'s surface and
+self-test steps described below left the workflow and run in `release.ts`'s local gate; `tag` needs
+only `validate`. The design and measurements below are kept as they were measured.
 
 🔒 Owner, 2026-11-09: **"yes. From this point forward it is the release page."** Earlier tags
 (v1.0.0 … v2.1.0) keep no page: "only new tags will get release pages." 🔒 Owner, 2026-11-10

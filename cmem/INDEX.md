@@ -1,47 +1,17 @@
-# cmem — Portable Project Memory for universalWasmLoader-c
+# INDEX: universalWasmLoader-c
 
-This folder is the **authoritative, portable project memory** for `universalWasmLoader-c`. It lives
-inside the project tree, so it travels with the repo and is committed to git. Keep files small and
-single-topic.
+Read STATE.md first. Open another file only when the task matches its line.
 
-## Policy
-
-- **`cmem/` is the single home for ALL project memory.** When the owner says "**update the project
-  memory**," update the matching `cmem/` topic file with the latest decisions, found bugs, design
-  changes, and current state — then add/refresh its one-line pointer in the table below. Convert
-  relative dates to absolute; update existing entries rather than duplicating.
-- **`README.md` and `docs/` are NOT project memory.** They are the public, user-facing docs. Keep
-  internal decision logs / bug post-mortems out of them — those live here in `cmem/`. This repo has
-  no `SPEC.md`: the cross-language spec is loader-js's (`../universalWasmLoader-js/SPEC.md`).
-- **Layout** (workspace `../../../cmem/memory-conventions.md`): a small loader port, so
-  `overview.md` carries what-it-is, state, release flow, known gaps AND the open list (the status
-  narrative exists once, there); `working-rules.md` the repo-specific rules; `best-practices.md`
-  method rules; `compat-gate.md` the release gate. `CLAUDE.md` is a pointer only. **`local/` is
-  gitignored** (machine facts, anything private; absent in a clone) — nothing private in a
-  committed file.
-
-### The "update the project memory" trigger (binding on every agent)
-When the owner says **"update the project memory"** (or a synonym — "update memory", "record this"),
-do BOTH: (1) AUDIT all `cmem/` files for stale live claims — grep the old values, not just the files
-you touched — revise them and refresh the Files-table pointers (absolute dates; update, don't
-duplicate); and (2) sync the user-facing README / `docs/` only where the change is user-relevant —
-never copy internal decision logs into them.
-
-### The "look for code issues" trigger (binding on every agent)
-When the owner says **"look for code issues"** (or "code audit" / "audit the code"), perform a
-comprehensive audit across tested AND untested paths for: (1) workarounds / temporary hacks;
-(2) dead code; (3) bugs (wrong ABI marshalling, off-by-one pointer/length math, endianness, missing
-`cabi_post` calls); and (4) silent fall-throughs (returning a default instead of erroring). Report
-`file:line` + severity, fix the safe ones, and keep the test suite green (`make clean test` → 93/93; default compiler is `zig cc`).
-
-## Files
-
-| File | What it holds |
-| --- | --- |
-| [overview.md](overview.md) | What this loader port is, where the repo lives (`synapticforge1` org since 2026-10-20), its language/runtime, API surface, ABI/SPEC conformance status, tests, release flow, known gaps (CI runs no C tests; scripts not type-checked), and the status of workspace letters for this repo — all done (2026-10-26) |
-| [handoffs.md](handoffs.md) | Letters FROM this repo to siblings, full text; each indexed by a row in the workspace ledger. C13 (2026-10-26, closed the same day): loader-js, re-stamp the H7 fixtures from wasmtk `4a5c3cf668d` |
-| [release.md](release.md) | 🔒 The ONE release record (owner, 2026-11-10, H33 D3): how a release works now (CI checks → CI tags → page → registry read-back; slots U1–U12) and § Release History, newest first |
-| [compat-gate.md](compat-gate.md) | The SemVer compatibility gate (letter H6, 2026-10-22): surface snapshot, floor, previous-tag tests, `make bump`, CI, the end-to-end inversion table |
-| [history-purge.md](history-purge.md) | The 2026-10-22 history rewrite (letter H19): what was purged, how it was verified, what is out of our control, and the full old → new commit hash map |
-| [best-practices.md](best-practices.md) | METHOD rules: this repo's own (§ L1–L4) + the workspace's 28 ★ convergent rules, copied verbatim and stamped 2026-10-26 (letters H6, H24, H27, C8; text-checked, 0 differences) |
-| [working-rules.md](working-rules.md) | Repo-specific rules on top of the workspace floor: committed scripts are TypeScript on Bun (C has no scripting mechanism); the in-tree scripts and their `make` targets; releases only via `make release` (no hand-made tag, 2026-11-10); the owner's words "commit" / "push" / "release" (H34); machine facts only in the gitignored `local/`; C compiler defaults to `zig cc` (all 2026-10-22) |
+- [working-rules.md](working-rules.md): before the first commit or command of a session; the owner's words
+- [open-work.md](open-work.md): when choosing the next item or picking one up
+- [design-decisions.md](design-decisions.md): when a change touches a recorded decision or a rule's history
+- [overview.md](overview.md): when working in the header, its API or ABI, or the build and the port
+- [testing.md](testing.md): before running or adding tests
+- [compat-gate.md](compat-gate.md): when changing the public surface, `make bump` or the CI release scripts
+- [release.md](release.md): only when releasing; the Release History
+- [review-process.md](review-process.md): only during a review; the last review's record
+- [platforms.md](platforms.md): when a task touches a platform, a triplet or the support matrix
+- [best-practices.md](best-practices.md): this repo's own method rules (§ L)
+- [best-practices-shared.md](best-practices-shared.md): the workspace's ★ rules, a stamped copy; never edited here
+- [archive/](archive/): do not read unless the owner asks about past work
+- `local/`: machine facts; never given to a reviewer

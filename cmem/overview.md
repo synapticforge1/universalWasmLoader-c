@@ -1,4 +1,8 @@
-# overview — universalWasmLoader-c
+# overview — universalWasmLoader-c: what it is, its files, API, ABI and build
+
+Summary: the loader's design and public API as implemented, its SPEC conformance, and how it is
+built and distributed. Last verified 2026-11-24. Where the project stands is in
+[STATE.md](STATE.md); tests in [testing.md](testing.md); open items in [open-work.md](open-work.md).
 
 ## What this is
 
@@ -17,27 +21,10 @@ its ecosystem.
   are always visible; the implementation is compiled into exactly one TU that does
   `#define UWL_IMPLEMENTATION` before including. Consumers link against the wasmtime C API library.
 
-## Repository location — moved to the `synapticforge1` org (recorded 2026-10-20)
+## The repository's files
 
-- **Canonical home:** `https://github.com/synapticforge1/universalWasmLoader-c` (an organization
-  under the owner's control). Formerly `https://github.com/jrmarcum/universalWasmLoader-c`; GitHub
-  redirects the old path, but a redirect is not a contract — new references use the org path.
-- **The JSR package scope is a separate namespace and did NOT move:** the reference loader is still
-  `@jrmarcum/universal-wasm-loader` on jsr.io; sibling repos (e.g. `wasmtk`) were not part of this move.
-- **References repointed 2026-10-20** as **1.1.0 port-version 2** (header unchanged, so no version
-  bump): port `homepage`, the portfile's raw-github header + LICENSE URLs (verified to resolve at
-  `v1.1.0` under the org and to match the existing sha512 pins), and `docs/vcpkg.md`. `versions/`
-  hand-updated (git-tree `f2df1575…`, baseline port-version 2). Local `origin` remote set to the org
-  URL. Consumers' `vcpkg-configuration.json` registry `repository` should use the org URL, with a
-  baseline at or after the `registry: … port-version 2` commit once it is pushed.
-
-## Current state — v2.1.1
-
-The header-only loader is implemented and passes the full reference suite (93/93). The latest
-release is **v2.1.1** (2026-11-09). **Every release, newest first, with what changed and how it
-was read back, is in [release.md](release.md) § Release History** (the one place since
-2026-11-10, H33 D3). How a release works now (CI checks, then CI tags, then the page, then the
-registry read-back) is in [release.md](release.md) § How a release works. Working tree:
+The header-only loader is implemented and passes the full reference suite (93/93). Releases, and
+how a release works, are in [release.md](release.md). The files:
 
 - `universal_wasm_loader.h` — the single-header library (public API + `UWL_IMPLEMENTATION` body).
 - `tests/spec_tests.c` — the SPEC §8 reference suite (84 assertions since 2026-11-07, C29; 93
@@ -190,37 +177,6 @@ unchanged by it.
   wasmtime WASI context (`wasmtime_context_set_wasi`, stdout/stderr inherited) and
   `wasmtime_linker_define_wasi` so I/O-using libraries instantiate. Pure-compute modules ignore it.
 
-## Tests
-
-`make test` → builds `tests/spec_tests.c` and runs it: **93 passed, 0 failed** (29 until
-2026-10-26, 34 and then 43 on 2026-11-07, 84 since C29 the same day, 93 since C39 on 2026-11-08;
-see § A host callback can fail). The C29 tests are SPEC §8
-"Refusals" as they apply to C: `test_wit_absent_vs_failed` (a path with no `.wasm` suffix → raw;
-a `.wit` that is a directory → refused; a bad `.wit` with no `.wasm` → the `.wit`'s fault, so it is
-read first), `test_wit_parsing` (ten malformed `.wit` beside a copy of `math_50.wasm`, each refused
-naming the `.wit` and the fault, plus one accepted form), `test_import_refusals` (no / partial /
-NULL-fn callbacks; a `string`-result import; `envAdd` returning void, f64, bool, string, s64), and
-`test_typed_args` (seven wrong-kind / wrong-count `uwl_call`s, and `call_str(greet, NULL)`). They
-write scratch files into `tests/` and remove them. Not ported from -js: async callbacks (C has
-none) and the http rows (no http path). `test_result_kinds` (H29 / S8, 9 checks): raw `multiply` on a
-`.wit`-less copy (`tests/raw_math_50.wasm`, written and removed by the test) → 10.0, i32 args
-refused; four typed accessors on the wrong kind → sentinel + last error; a matching call clears
-it. Inverted: the same tests on the pre-fix header → 40 passed, 3 failed (exactly the
-`call_i32` / `call_f64` / `call_bool` mismatch checks). Covers all four `*_50` fixtures, SPEC §10 (`init_check`: `getValue()==99` through the
-raw `uwl_call` path proves `_initialize` ran; `wasi_io_50`: `logAndDouble(21)==42` proves the WASI
-context satisfied `fd_write` — the module's own `doubling` line appears on stdout), plus singleton,
-pool, and version-pin-rejected scenarios. Both §10 tests were inverted 2026-10-26 on a scratch
-copy of the header: `_initialize` never looked up → only `getValue()==99` fails; WASI not defined in
-the linker → only `logAndDouble(21)==42` fails (33/34 each). ⚠️ Without WASI the module still LOADS
-(unknown imports are bound to traps) and the CALL traps, so the result is the evidence, not the
-load. **The fixtures ARE the
-reference set** (H7, 2026-10-26): copied unmodified from loader-js `tests/` at its `36aa661`
-(stamp `tests/fixtures.json`: wasmtk `4a5c3cf668d`, `synapticforge1/wasmtk`); all 12 sha256 in
-`files` verified; the four `*_50.wasm` changed from the 2026-06 copies, the `.wit` did not.
-`make clean test` → 29/29 on them (zig cc, 2026-10-26); inverted by truncating `math_50.wasm` to
-20 bytes → 16 passed, 3 failed, then restored. To refresh: copy the same files again from -js and
-re-verify; never edit them here.
-
 ## Build / release flow
 
 - **Local:** `make fetch` then `make test` (needs **Bun**, `unzip` or `tar`, **Zig**, `make`).
@@ -273,119 +229,3 @@ re-verify; never edit them here.
   by hand before, `vcpkg x-add-version` needing a full vcpkg root). See the
   ecosystem publishing matrix in wasmtk `cmem/vision.md`.
 
-## Known gaps / not yet done
-
-- **Host import callbacks returning `string`** are not supported (would require allocating into WASM
-  memory from the trampoline; no fixture needs it). Since C29 such an import is REFUSED at load
-  (SPEC 4.0.0 §4), not silently mis-encoded. Numeric/bool import returns work.
-- **URL loading** (the JS/`-rs` `http(s)://` path) is not implemented — file paths only. Adding it
-  would bring SPEC §11 (time limit, cancellation, one request per file) and an `options` parameter.
-- **C++ compiling of the implementation is checked by hand only.** Until 2026-11-07 the
-  `UWL_IMPLEMENTATION` unit did not compile as C++ (measured with `zig c++ -fsyntax-only` on the
-  1.1.2 header: 3 errors, each a `goto fail` in `uwl_import` that crosses an initialised
-  declaration), although the header names C++ consumers. Fixed with C29: declarations come before
-  the first `goto`. The same check is now clean, with `-Wall -Wextra` and no diagnostics from the
-  header. Zig's own `-fsyntax-only` cache-rename noise is unrelated. No test or CI step compiles it
-  as C++; add one to `make test` if it regresses.
-- **Thread-safe pool** (blocking acquire) — the C pool is single-threaded; a future revision could
-  add mutex/condvar gating behind a compile flag.
-- **vcpkg port** validated locally on `x64-mingw-dynamic` (2026-06-17). CI
-  (`.github/workflows/vcpkg-release.yml`, since 2026-11-10):
-  - `validate` runs on every push and PR;
-  - for a release, the overlay install aimed at the commit (`install`, before the tag) and the
-    registry-mode install as a user (`publish`, after it), each on `x64-linux`, `x64-windows`
-    and `arm64-osx`;
-  - the overlay install also runs on a manual run.
-
-  Every release's install result is in [release.md](release.md). Not yet install-tested:
-  `x64-windows-static`, `x64-mingw-static`, `arm64-linux`, `x64-osx`.
-- **CI never runs the CURRENT C suite.** On a push to `main`, `validate` checks the port files,
-  the surface and the two self-tests. For a release, `compat` builds and runs the PREVIOUS
-  release's tests against the new header on Linux; it first ran 2026-10-26 (`v1.1.1`), so `make
-  fetch` + `zig cc` + a suite pass natively on x86_64-linux. The current 93 assertions are
-  verified only locally (x86_64-mingw), and `release.ts`'s cold gate runs them before every
-  release. A native macOS build and run has never happened: the install jobs build the port and
-  run no suite. Fix: a `make fetch` + `make clean test` job on Linux, macOS and Windows.
-- **The gate scripts are never type-checked.** Workspace § The gate (2026-10-22): a test task that
-  skips type-checking is not a gate, and Bun never type-checks. `scripts/*.ts` run under Bun only.
-  Owner, 2026-10-22: RECORD, do not add yet — a `tsc --noEmit` check would need `typescript` +
-  Bun's types (a `package.json` in a C repo). Revisit if a script bug slips past the self-test.
-
-## Workspace letters — status for this repo (2026-11-10)
-
-From the workspace ledger `../../../cmem/workspace-correspondence.md` (read first since 2026-10-26)
-and the letters in `../../../cmem/handoffs.md`; the workspace sweep reads this section.
-
-- **H15 (Bun scripting)** — done: `5fad372` (bash → Bun fetch script), `f1e14d1` (local rules
-  trimmed to the workspace floor).
-- **L2 (cut tracked `CLAUDE.md` to a pointer)** — done: `e189da8` (archive: `git show 1057d89:CLAUDE.md`).
-- **H7 / C11 (reference fixtures)** — done 2026-10-26: the stamped set copied from loader-js
-  `36aa661` (wasmtk `4a5c3cf668d`; history `f50c8e4` → `84b3e180eba` → `4a5c3cf668d`, wasmtk's
-  maps), 12/12 sha256, 29/29, inverted (see Tests). Asked of loader-js by letter **C13**
-  ([handoffs.md](handoffs.md)), verified and closed the same day. `wasi_io_50` and `init_check`
-  exercised by `spec_tests.c` the same day (34/34, both inverted; see Tests) — H7 fully done here.
-- **H17 part 3 (stale `jrmarcum/wasmtk` link)** — done 2026-10-26: `README.md:4` →
-  `synapticforge1/wasmtk`.
-- **H22 / H25 §3(d) (path test)** — recorded 2026-10-26 in [working-rules.md](working-rules.md).
-  Scan at HEAD with binaries (`git grep -a`): no drive path.
-- **H24 / H27 (★ re-copy, new stamp)** — done 2026-10-26: rule 5.2 re-copied, stamp now
-  `Copied from synapticforge1/cmem/best-practices.md on 2026-10-26`; text check 0 differences
-  ([best-practices.md](best-practices.md) § ★), including ★ 6.1's corrected id (C8).
-- **H29 (three behaviour checks, S8 / S9 / S10)** — answered 2026-11-07: S8's typed-accessor
-  defect FIXED (see § Typed accessors check the result kind), raw mode already correct; S9 and the
-  `.wit` fallback measured and recorded, not changed (owner / -js); S10's HTTP half n/a (no HTTP
-  path). Fix `83fbeda`, released in **1.1.2** (2026-11-07). S9 and the `.wit` fallback were then
-  decided as SPEC 4.0.0 and carried here by C29.
-- **C29 (re-align to SPEC 4.0.0; from loader-js)** — done 2026-11-07 (see § SPEC 4.0.0): items
-  (1) to (4) done, (5) n/a (no http). **Released as 2.0.0** the same day (tag `v2.0.0` →
-  `56217b6` after the owner-approved re-tag; CI run `42398823979` green). Answered in the ledger; loader-js verifies and closes.
-- **C39 (a host callback needs a way to fail; from loader-v)** — done 2026-11-08: `uwl_err` /
-  `UWL_ERR` (see § A host callback can fail), **released in 2.1.0** the same day. CLOSED by
-  loader-v on 2026-11-09, after it re-derived the change on `origin` and adopted it (-v `ea08973`).
-- **H32 (CI-made Release pages; loader-c: "a `release` job")** — done 2026-11-09 (`b794dd2`): the
-  job and `scripts/github-release.ts` with its mock-API self-test (13/13, inverted by three
-  mutants). **Measured on GitHub by `v2.1.1`: the page was made by `github-actions[bot]`.** See
-  [compat-gate.md](compat-gate.md) § The release page. No backfill (owner).
-- **H31 (Bun notations = the latest installed)** — done 2026-11-09 (`b794dd2`): `vcpkg-release.yml`
-  1.4.3 → **1.4.4** (`bun --version` here), now one `BUN_VERSION` plus its sha256. That was the
-  only Bun version in the tree. Proven by `main`'s run `42648553716` (green).
-- **H30 (no `gh`, in CI too; record-only for this repo)** — recorded 2026-11-09 in
-  [working-rules.md](working-rules.md) § "No `gh`". Nothing to change: 0 `gh` hits outside `cmem/`
-  (`git grep -n -w gh -- . ':!cmem'`). The one web-UI task is the owner's "Re-run failed jobs" /
-  `workflow_dispatch`. Answered in the ledger; the workspace verifies and closes.
-- **H33 (the release process, semi-uniform; D1–D3)** — done 2026-11-10, pushed (`0d3e6d1`;
-  `main`'s run `42856737050` green on the non-release path), unreleased: the card's "To converge" list. U4 is `scripts/release.ts` (pushes `main` only).
-  D1 is the workflow: checks → CI's tag (`ci-tag.ts`) → the page → `publish`. U10 is the
-  registry-mode install as a user, in CI. U9: no `uses:`, Bun / Zig by sha256, vcpkg by commit,
-  `permissions: {}`, `concurrency`. D3 is [release.md](release.md). Rehearsed before landing
-  ([compat-gate.md](compat-gate.md) § The release page); first measured by the next release.
-- **H34 (the owner's words "commit", "push", "release")** — the workspace's section in
-  [working-rules.md](working-rules.md), kept as written, committed 2026-11-10.
-- **C30 / C34 (release-workflow hazards; from S3D-ReportCompiler, record-only)** — read
-  2026-11-08 (reasoned, not measured). Neither applies as written: `vcpkg-release.yml` has no
-  `id-token`, uses no secret, and publishes to no registry (the tag is the release, which a person
-  pushes). It has no `permissions:` block either, so its `GITHUB_TOKEN` gets the repo's default
-  scope, and its `uses:` are tag-pinned (`@v4`, `@v2`). Not changed; a `permissions: contents:
-  read` line would narrow the token, and that is the owner's call.
-- **H28 (maintainer address in one `cmem/` note; wabt-ts / binaryen-ts retired)** — record-only,
-  nothing to change: this repo's history and commits use noreply (H19), it carries no contact note,
-  and no tracked file cites either retired repo (★ rule tags name them as origins, not locations).
-- **H16 (`.git` growth)** — applied 2026-10-22 with the owner's OK (gc, fsck clean,
-  `maintenance.strategy gc`, 1 pack); details in the gitignored `local/environment.md`.
-- **H18 (personal drive paths)** — not addressed here, but the scan pattern found the old
-  `.vscode/settings.json` path; fixed in `99a4bbb`, untracked in `bc3666f`.
-- **H19 (purge personal information from history)** — done 2026-10-22 with the owner's go: the
-  personal address (all 34 commits + the `v1.0.0` tagger) → GitHub noreply, the `.vscode` path
-  removed from every commit (34 → 33), tagged trees byte-identical, force-pushed with leases.
-  **Every hash changed** — old → new map for the workspace's citations and for vcpkg registry
-  `baseline` pins: [history-purge.md](history-purge.md). The rewritten head was `bc3666f`; the
-  record landed in `77cf808` (CI green, run `39823105880`). ⚠️ CI runs from before the rewrite show
-  the OLD hashes on GitHub; translate them with the map.
-- **For the workspace sweep — drift W7 / layout-and-packaging P5 (org Actions policy):** MEASURED
-  2026-10-22: run `39804596951` on `0494969` (GitHub shows its pre-H19 hash `0f9b6e3`) executed
-  `oven-sh/setup-bun@v2` in this repo's
-  `validate` job and succeeded — the `synapticforge1` org permits third-party `uses:` for this repo.
-  (`mlugg/setup-zig@v2` is in the tags-only `compat` job, not yet run.)
-- **H6** — done 2026-10-22: ★ copy + § L in `best-practices.md` and the memory-layout audit
-  (`e80d838`); the SemVer compatibility gate ([compat-gate.md](compat-gate.md)). Only the CI
-  `compat` job first ran on the `v1.1.1` tag, 2026-10-26: green ([compat-gate.md](compat-gate.md)). The ★ copy was re-copied 2026-10-26 (H24 / H27 above).

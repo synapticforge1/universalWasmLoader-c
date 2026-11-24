@@ -1,39 +1,61 @@
 # release.md — how this repo releases, and every release so far
 
-🔒 The ONE place releases are recorded (owner, 2026-11-10: "releases should be recorded in one
-place in every project; … release.md should be the file name with the newest first in the
-'Release History' with a summary of what changed in each one"; workspace letter H33, D3). Release
-records that used to sit in `overview.md` § Current state and `compat-gate.md` § First tagged run
-live here now; those places point here.
+Summary: the release process as it runs here, slot by slot, then every release, newest first.
+🔒 The ONE place releases are recorded (owner, 2026-11-10, workspace letter H33, D3: "release.md
+… with the newest first in the 'Release History' with a summary of what changed in each one").
+Last verified 2026-11-24.
 
-## How a release works (since 2026-11-10)
+## How a release works
 
-🔒 Owner, 2026-11-10 (D1): **"the CI to check first, then push the tag, and then create the release
-page from the tag, then publish the package to the registry."** The workspace's uniform shape
-(`../../../cmem/release-process.md` § 5, slots U1–U12), filled for this repo:
+🔒 The owner's order (2026-11-10, D1), with the 2026-11-17 amendment (H37): **the reviews and every
+test run LOCALLY first; then "CI to verify the version, then tag, create the release page and
+publish, and skip any version already published."** The workspace's shape
+(`../../../workspace/cmem/release-process.md` § 5, slots U1–U12), filled for this repo:
 
-| Slot | Here |
-| --- | --- |
-| U1 the go and the level | The owner's "release" with a level. `make release KIND=patch\|minor\|major`; `release.ts` and `bump.ts` refuse a missing level. There is no default. |
-| U2 merge first; the bump is its own commit | Notes (the README "Breaking Changes" row for a major) are merged into `main` first. `release.ts` makes the bump commit `bump to vX.Y.Z` itself, then a second commit for the registry entry (`registry: X.Y.Z git-tree and baseline`). |
-| U3 the bump tool | `scripts/bump.ts` refuses a dirty tree (untracked files count) and a stale surface. It computes the floor from the surface diff since the last tag and refuses a lower level. For a patch or minor it runs the previous tag's tests. It syncs `vcpkg.json` and the portfile's version and both sha512 pins (from the COMMITTED blobs). [compat-gate.md](compat-gate.md) |
-| U4 the release script | `scripts/release.ts`. Guards: on `main`, a clean tree, `main` = GitHub's (`ls-remote`), the tag absent here and on GitHub, `versions/` without the version, and the cold gate (surface check, both self-tests, `make clean test`). Then the bump, the registry entry, a re-check, ONE push of `main` and a read-back. **It makes and pushes no tag.** `--dry-run` stops after the guards. |
-| U5 `checks` first | `validate` (every push and PR): pins, versions, git-tree, surface, both self-tests, and "is this a release?" (`ci-tag.ts state`). Then, for a release: `compat` (floor + previous-tag tests, Linux) and `install` (the port on 3 OSes from an overlay copy aimed at THIS commit, since the tag does not exist yet). All are token-less clones. |
-| U6 CI tags | `tag`: `ci-tag.ts create`, the annotated `vX.Y.Z` on `github.sha` via the REST API, read back. It is a no-op if the tag is already there, and refuses if the tag is elsewhere. |
-| U7 the page from the tag | `release`: `github-release.ts`, H32's order (tag peels to `github.sha` → an existing page is done → POST with generated notes and a vcpkg note → read back, peel again). |
-| U8 publish | For this git-tag registry, U6's tag IS the publish: the port downloads the header from it. `publish` is the read-back: on 3 OSes it installs the version the way a user does (manifest mode, this repo as a git registry, baseline = this commit). It FAILS unless vcpkg installs exactly this version with the pinned header and the copyright. There is no registry credential and no provenance to read: vcpkg verifies the sha512 pins itself. |
-| U9 pins | No `uses:` anywhere. Git clones are credential-less. Bun 1.4.4 and Zig 0.16.0 are pinned by version + sha256, vcpkg by commit (tag 2026.10.16). Top-level `permissions: {}`; only `tag` and `release` hold `contents: write`. `concurrency` is one group per ref, never cancelled (the tag is not known until `validate` runs, so the group is the ref, not the tag). |
-| U10 install as a user | Done IN CI by `publish`. By hand: `docs/vcpkg.md` § 2a. |
-| U11 record | This file, newest first. |
-| U12 failure | "Re-run failed jobs" (owner, web UI). `ci-tag.ts state` treats a tag already on this commit as a re-run; `create`, the page and `publish` skip or repeat what is done. Never a new tag for the same code, never a moved tag (2.0.0's move, below, came before this rule and was the owner's word). |
+- **U1 — the go, the level, the review set.** The owner's "release" with a level:
+  `make release KIND=patch|minor|major`; there is no default. `release.ts`'s FIRST step is the
+  review gate (`review-gate.ts`): the five required reviews were completed on this code
+  ([review-process.md](review-process.md) § Last review).
+- **U2 — merge first; the bump is its own commit.** Notes (a README "Breaking Changes" row for a
+  major) are on `main` first. `release.ts` commits `bump to vX.Y.Z`, then
+  `registry: X.Y.Z git-tree and baseline`.
+- **U3 — the bump tool.** `bump.ts` refuses a dirty tree (untracked files count) and a stale
+  surface, computes the floor from the surface diff since the last tag and refuses a lower level,
+  runs the previous tag's tests for a patch or minor, and syncs the version and both sha512 pins
+  from the committed blobs ([compat-gate.md](compat-gate.md)).
+- **U4 — the release script.** `release.ts` guards: on `main`, a clean tree, `main` = GitHub's
+  (`ls-remote`), the tag absent here and on GitHub, `versions/` without the version. It makes and
+  pushes **no tag**; it pushes `main` once and reads it back. `--dry-run` stops after the gates.
+- **U5 — the checks, LOCAL.** `release.ts`'s cold gate: the privacy gate (the tree and the commits
+  since the last release), the gates' tests, the surface check, both self-tests, `make clean test`;
+  `bump.ts` adds the floor and the previous tag's tests. It prints the `Tested on:` line. CI's
+  `validate` only verifies the version: HEAD = the pushed commit, the pins, the port version and the
+  registry entry agree, and "is this a release?" (`ci-tag.ts state`).
+- **U6 — CI tags.** `tag` (needs `validate`): `ci-tag.ts create`, the annotated `vX.Y.Z` on
+  `github.sha` through the REST API, read back; a no-op if the tag is already there, refused if it
+  is elsewhere.
+- **U7 — the page from the tag.** `release`: `github-release.ts`, in H32's order (the tag peels to
+  `github.sha`; an existing page is done; POST with generated notes and a vcpkg note; read back;
+  peel again).
+- **U8 — publish.** For this git-tag registry the tag IS the publish: the port downloads the header
+  from it. `publish` is the read-back: on 3 OSes it installs the version as a user does (manifest
+  mode, this repo as a git registry, baseline = this commit) and FAILS unless vcpkg installs this
+  version with the pinned header and the copyright. vcpkg verifies the sha512 pins itself.
+- **U9 — pins.** No `uses:` anywhere; credential-less clones; Bun by version + sha256, vcpkg by
+  commit (tag 2026.10.16); top-level `permissions: {}`, only `tag` and `release` write;
+  `concurrency` per ref, never cancelled (the tag is known only after `validate`).
+- **U10 — install as a user:** in CI by `publish`; by hand, `docs/vcpkg.md` § 2a.
+- **U11 — record:** this file, newest first, with the `Tested on:` line of each release.
+- **U12 — failure:** "Re-run failed jobs" (an owner web-UI item); each job skips or repeats what is
+  done. Never a new tag for the same code, never a moved tag (2.0.0's move, below, came before this
+  rule and was the owner's word).
 
-The workflow is `.github/workflows/vcpkg-release.yml`. Its scripts are `scripts/ci-tag.ts`,
-`scripts/github-release.ts` and `scripts/github-api.ts`, tested by `scripts/check-github-release.ts`
-(`make release-selftest`). The design, rehearsal and measurements are in
-[compat-gate.md](compat-gate.md) § The release page.
+The workflow is `.github/workflows/vcpkg-release.yml`; its scripts `ci-tag.ts`, `github-release.ts`
+and `github-api.ts` are tested by `check-github-release.ts` (`make release-selftest`). The design
+and its measurements: [compat-gate.md](compat-gate.md) § The release page.
 
-**Reading a run:** GitHub's public REST API allows 60 unauthenticated requests an hour. Poll a run
-every 2–3 minutes, not faster; `releases.atom` and the page itself are not rate-limited.
+**Reading a run:** the public REST API allows 60 unauthenticated requests an hour; poll every 2–3
+minutes. `releases.atom` and the page itself are not rate-limited.
 
 ## Release History
 
@@ -49,6 +71,9 @@ in CI (H31).
 - **Read back:** `main`'s run `42648553716` (on `b794dd2`) was green before tagging. The page
   `v2.1.1` answers 200, and `releases.atom` names its author `github-actions[bot]`. The served
   header and LICENSE equal the pins. Per-job conclusions were not read: the API limit was spent.
+- **Tested on:** Windows (`win-x64`), the dev machine: the suite 93 / 93 before tagging. The tag run
+  installed the overlay port on the `x64-linux`, `x64-windows` and `arm64-osx` runners (the
+  `release` job needs those, and ran); no suite ran there. Other platforms: not yet tested.
 
 ### 2.1.0 — 2026-11-08 (minor)
 

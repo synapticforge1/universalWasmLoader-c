@@ -1,99 +1,132 @@
-# working-rules.md — repo-local rules for universalWasmLoader-c
+# working-rules.md — the standing rules for universalWasmLoader-c
 
-The workspace floor ([`../../../cmem/working-rules.md`](../../../cmem/working-rules.md)) applies here
-in full. Scripting (workspace Tooling rule 1, 🔒 owner 2026-10-22, "Deno is going away", clarified
-three times that day): a COMMITTED script kept for repeated use is written in the repo language's
-scripting mechanism, and C has none (a mechanism that must build an executable would not count
-anyway), so **committed scripts here are TypeScript run by Bun**. A one-time scratch probe deleted
-after use may be shell, Bun or anything that fits — still written with `Write`, never a heredoc.
-No host Python, no committed shell scripts. This file holds only what is specific to this repo.
-**A repo's own rules govern inside that repo.**
+Summary: the rules that hold in this repo, in the present tense, on top of the workspace floor
+([`../../../workspace/cmem/working-rules.md`](../../../workspace/cmem/working-rules.md) and
+[`tooling-rules.md`](../../../workspace/cmem/tooling-rules.md)), which apply in full. How a rule
+changed is in [design-decisions.md](design-decisions.md). Last verified 2026-11-24.
 
-## Scripts
+## A session, start and end
 
-- **In-tree scripts:** `scripts/fetch-wasmtime.ts` (called by `make fetch` as
-  `bun run scripts/fetch-wasmtime.ts $(WASMTIME_VERSION) $(WASMTIME_PLATFORM)`). It replaced the bash
-  `scripts/fetch-wasmtime.sh` on 2026-10-22; no shell scripts remain in the repo. The compatibility
-  gate (2026-10-22): `scripts/surface.ts`, `compat.ts`, `bump.ts`, `check-compat-gate.ts`, run via
-  `make surface | surface-check | compat | compat-selftest | bump KIND=…` ([compat-gate.md](compat-gate.md)).
-  The release (2026-11-10, H33): `scripts/release.ts` (`make release KIND=…`, `release-dry-run`);
-  CI only: `ci-tag.ts`, `github-release.ts`, `github-api.ts`; their self-test
-  `check-github-release.ts` (`make release-selftest`). Besides C, Bun is the only scripting
-  runtime here.
-- **Releases go through `make release KIND=…`** ([release.md](release.md)), which runs `make
-  bump`; never a hand edit of the version line, the sha512 pins or `versions/`, and **never a
-  hand-made tag** (CI tags, owner's order 2026-11-10). A surface change is re-baselined (`make
-  surface`) in its own commit before the release.
-- **External tools a script spawns run with a relative path and `cwd`**, never an absolute Windows
-  path: GNU tar reads `<drive>:\…` as a remote `host:path`.
-- **Machine facts and anything private go in `cmem/local/`** (gitignored, verified with
-  `git check-ignore -v` 2026-10-22), never in a committed file (workspace § Records, 🔒 owner
-  2026-10-22). Scan the diff before committing memory.
-- **The path test is "is it machine-specific?", not "is it absolute?"** (🔒 owner, 2026-10-23;
-  workspace letter H22, full text in the floor's § Records). Not public: any path that records the
-  owner's machine layout — a user profile, the project tree, other drives, scoop / AppData installs,
-  scratchpad or session ids. Fine: repo- or sibling-relative paths, env vars, placeholders
-  (`<repo-root>`), and a CONVENTION path that names nothing about one machine and works on any
-  comparable host. A scan hit is a CANDIDATE judged by that test, so convention paths are not
-  scrubbed. Scans include binaries (`git grep -a`; workspace C3: Zig/Rust debug info embeds paths).
-  The one email allowed is the maintainer contact as commit author/committer (owner, 2026-10-26);
-  this repo's history already uses noreply (H19) and keeps it.
+- **Start:** read `STATE.md`, then `INDEX.md`, then the workspace correspondence
+  (`../../../workspace/cmem/workspace-correspondence.md`) and only the letters
+  (`../../../workspace/cmem/letters/<ID>.md`) addressed to this repo or touching the task.
+- **Answer a letter** by appending ONE bullet under its `## Answers`:
+  `- **loader-c, <date>:** <what was done, the commit, the check>`, lines under 200 characters.
+  Never change its status or its index line; only the item's creator closes it (workspace H41).
+- **A letter from this repo** is a new `letters/C<n>.md` plus its index line (next free `C`
+  number, after re-reading the index and `archive/correspondence-closed.md`). Nothing else is
+  ever written outside this repo.
+- **End:** rewrite `STATE.md`; move items closed this session to `archive/`; record decisions in
+  `design-decisions.md` and rules here; empty the scratchpad; run `make cmem-check` and fix what it
+  reports (workspace memory guide, H38).
 
-## No `gh`, in CI too (🔒 owner, 2026-11-08; workspace Tooling rule 9, letter H30)
+## The owner's words
 
-`gh` is not installed and is not to be. **Check the repo instead.**
+🔒 Written into every project on the owner's direction (2026-11-10, workspace Tooling rule 12,
+letter H34), with the review words of 2026-11-17 (Tooling rule 13, letter H37):
 
-- Branches and tags: `git ls-remote origin`.
-- A served file: raw GitHub at the tag, hashed against the portfile's sha512 pin.
-- CI results: GitHub's public REST API, read-only and without a token (`actions/runs`, `/jobs`).
-  That is how every tag run here has been read since 2026-10-26.
+- **"commit"** — run "update the project memory files", then commit to the branch being worked on.
+  Nothing is pushed.
+- **"push"** — perform "commit", merge the branch into `main`, push `main` (and the working branch)
+  to GitHub and read it back with `git ls-remote`.
+- **"release"** — perform "push", then the release process ([release.md](release.md)): the review
+  gate first, then `make release KIND=…`. The level (patch / minor / major) is the owner's: ask if
+  it was not given.
+- **"review"** runs all five required reviews in order — basic, hardening, licensing, security,
+  privacy ([review-process.md](review-process.md)). **"basic review"**, **"hardening review"**,
+  **"licensing review"**, **"security review"**, **"privacy review"** and **"efficiency review"**
+  each run that one class.
+- **"update the project memory"** (or "update memory", "record this") — audit every `cmem/` file
+  for stale live claims (grep the old values, not only the files touched), revise them, keep
+  dates absolute; then sync `README.md` / `docs/` only where the change is user-relevant.
+- **"look for code issues"** (or "code audit") — audit tested AND untested paths for workarounds,
+  dead code, bugs (ABI marshalling, pointer / length arithmetic, endianness, a missing
+  `cabi_post`) and silent fall-throughs; report `file:line` and severity, fix the safe ones, and
+  keep `make clean test` green.
 
-A GitHub web-UI task is an OWNER item, never "blocked on gh". Here that means a
-`workflow_dispatch` run of `vcpkg-release.yml` ("Run workflow"). The GitHub Release page is made
-by CI's `release` job through the REST API, never by hand (H32, 2026-11-09; see the next section).
+Each command includes the one before it, and none goes further than its own word.
 
-## The release: CI checks, CI tags, the page, the registry (🔒 owner, 2026-11-09 / 11-10; H32, H33)
+## Memory
 
-"yes. From this point forward it is the release page" (2026-11-09). "The CI to check first, then
-push the tag, and then create the release page from the tag, then publish the package to the
-registry" (2026-11-10). A release is CI's tag PLUS its Release page PLUS a green registry
-read-back, all from one workflow run on the pushed `main`. How it works, slot by slot, and every
-release so far: [release.md](release.md). "Only new tags will get release pages": no backfill.
-If a job fails, the release is incomplete. "Re-run failed jobs" (an owner web-UI item); every
-job is safe to re-run. Never a new tag for the same code, never a moved tag.
+- **`cmem/` is the single home of the project memory.** `README.md` and `docs/` are the public,
+  user-facing docs; internal decision logs and post-mortems stay in `cmem/`.
+- **Layout and limits are the workspace memory guide's** (H38): `STATE.md` ≤ 60 lines, `INDEX.md`
+  a router ≤ 3 KB, any other live note ≤ 25 KB, lines ≤ 200 characters; `archive/` and `local/`
+  are unlimited and read only when asked. The root `CLAUDE.md` is untracked and points at
+  `STATE.md` and `INDEX.md` only.
+- **The ★ rules are a copy** in `best-practices-shared.md` (owner, 2026-11-19, H38: keep it, in a
+  file of its own), the one stated exception to "link, do not copy". It is never edited in place:
+  re-copy from the workspace and compare the whitespace-normalized text by script.
+- **Machine facts and anything private go in `cmem/local/`** (gitignored), never in a tracked file.
 
-## Bun version: always the latest installed (🔒 owner, 2026-11-09; Tooling rule 10, letter H31)
+## Scripts and tools
 
-"Update any notations on bun version to the latest installed version always." Before writing a
-Bun version, check `bun --version`. It was 1.4.4 on 2026-11-09, so `vcpkg-release.yml`'s
-`BUN_VERSION` moved 1.4.3 → 1.4.4 that day. `BUN_SHA256` is the sha256 of `bun-linux-x64.zip`
-from that release's `SHASUMS256.txt`, so move the two together. A dated test result keeps its
-Bun until the test is re-run. This repo declares no minimum Bun.
+- **Committed scripts are TypeScript run by Bun** (C has no scripting mechanism; workspace Tooling
+  rule 1). A one-time script deleted after use may be shell or Bun, written with `Write`, never a
+  heredoc. No host Python, no committed shell scripts.
+- **The scripts:** `fetch-wasmtime.ts` (`make fetch`); the compatibility gate `surface.ts`,
+  `compat.ts`, `bump.ts`, `check-compat-gate.ts` ([compat-gate.md](compat-gate.md)); the release
+  `release.ts`; for CI only `ci-tag.ts`, `github-release.ts`, `github-api.ts`, with their self-test
+  `check-github-release.ts`; the review-standard gates `review-gate.ts`, `check-privacy.ts` and
+  their `*.test.ts` (`bun test scripts/`); the memory size check `check-cmem.ts`.
+- **A tool a script spawns runs with a relative path and `cwd`**, never an absolute Windows path:
+  GNU tar reads `<drive>:\…` as a remote `host:path`.
+- **The C compiler is `zig cc`** by default, linked with Zig's `libunwind` everywhere except macOS
+  ([overview.md](overview.md) § Build / release flow). `CC=…` overrides it.
+- **Bun notations are the latest installed Bun** (🔒 owner, Tooling rule 10, letter H31): check
+  `bun --version` before writing one. `vcpkg-release.yml`'s `BUN_VERSION` and `BUN_SHA256` (the
+  sha256 of `bun-linux-x64.zip` in that release's `SHASUMS256.txt`) move together. A dated test
+  result keeps its Bun until re-run. This repo declares no minimum Bun.
+- **No `gh`, in CI too** (🔒 owner, Tooling rule 9, letter H30). Check the repo instead:
+  `git ls-remote` for branches and tags; the served file hashed against its pin; GitHub's public
+  REST API for CI results (60 unauthenticated requests an hour: poll every 2–3 minutes). A GitHub
+  web-UI task ("Run workflow", "Re-run failed jobs") is an owner item.
 
-Measured 2026-11-09: `git grep -n -w gh -- . ':!cmem'` on `main` gives 0 hits (only memory names
-the rule). `vcpkg-release.yml` calls no `gh`, and no script does. If a workflow ever needs what `gh` did, it uses the REST API from a Bun
-step with `GITHUB_TOKEN`, landed before a release and proven by its next real run.
+## Releases
 
-## C compiler: `zig cc` (owner, 2026-10-22)
+- **A release is `make release KIND=…`** ([release.md](release.md)): the review gate, the local
+  gates, the bump and registry commits, ONE push of `main`. Never a hand edit of the version line,
+  the sha512 pins or `versions/`; **never a hand-made tag** — CI tags (owner, 2026-11-10).
+- **CI only publishes** (🔒 owner, 2026-11-17, H37): it verifies the version, tags, makes the page,
+  and installs the version from the registry as a user. Every test and gate runs locally.
+- **A surface change is re-baselined** (`make surface`) in its own commit before the release.
+- **A failed CI job is re-run** ("Re-run failed jobs"); every job is safe to re-run. Never a new
+  tag for the same code, never a moved tag.
 
-The Makefile's default `CC` is `zig cc`, linked with Zig's `libunwind` everywhere except macOS; see
-[overview.md](overview.md) § "Build / release flow". Other compilers stay supported via `CC=…`.
+## Reviews
 
-## Owner commands: "commit", "push", "release" (owner, 2026-11-10)
+- **The standard is the workspace's** (`../../../workspace/cmem/review-process.md`); this repo's
+  slots are in [review-process.md](review-process.md).
+- **Open review issues live in `cmem/review-issues.md`, which is gitignored**; the privacy gate
+  refuses it if it is ever tracked.
+- **Fixes go on a local review branch**, merged to `main` when the review completes; the
+  completed review is recorded as `- Review complete: <commit>` in `review-process.md`.
+- **A reviewing agent never commits, pushes or releases.** Its folder (clones, mutants) lives under
+  the main session's scratchpad and is removed at triage.
 
-🔒 Written into every project by the workspace session on the owner's direction (2026-11-10:
-"please write that into each project"; workspace `cmem/working-rules.md` Tooling rule 12, letter
-H34). When the owner says:
+## Privacy
 
-- **"commit"** — first run "update the project memory files" (re-derive this repo's `cmem/` from
-  its current state), then commit to the branch being worked on. Nothing is pushed.
-- **"push"** — perform "commit", then merge the branch into `main`, then push `main` (and the
-  working branch) to GitHub (`origin`) and read it back with `git ls-remote`.
-- **"release"** — perform "push", then the release process: the workspace's
-  `cmem/release-process.md` §§ 5–8 — CI checks first, then CI pushes the tag, then the GitHub
-  Release page from the tag, then the publish to the registry — recorded in `cmem/release.md`
-  § "Release History" (newest first, a summary of what changed). The level (patch / minor /
-  major) is the owner's: ask if it was not given.
+- 🔒 **Nothing private is ever made public** (owner, 2026-10-22): no tokens, keys, passwords,
+  personal emails or machine-specific paths in any tracked file, commit message or issue.
+- **The path test is "is it machine-specific?"** (🔒 owner, 2026-10-23, H22). Not public: a path
+  that records one machine's layout (a user profile, the project tree, other drives, scoop /
+  AppData installs, scratchpad or session ids). Fine: repo- or sibling-relative paths, env vars,
+  placeholders such as `<repo-root>`, and convention paths that name nothing about one machine.
+- **No personal address anywhere here:** commits use the noreply address (H19), and no manifest
+  here has a maintainer field.
+- **The gate is `make privacy`** (`check-privacy.ts`: every tracked and new file in any encoding,
+  optionally commit messages); `release.ts` runs it over the commits since the last release.
 
-Each command includes the one before it, and none goes further than its own word (a "commit"
-never pushes, a "push" never releases). This repo's own gate and merge rules apply at each step.
+## Scratch space
+
+🔒 Bounded and cleaned by the session that used it (owner, 2026-11-19; Tooling rule 15, letter H43):
+
+- **Only the session's own scratchpad**, never another temp location or another session's folder;
+  its path is a machine fact and never goes in a tracked file.
+- **Delete when the item is cleared:** a one-time script after its run; a clone, mutant or build
+  output when its finding is fixed and verified. Nothing lives only in scratch.
+- **Budget: 200 MB per session folder.** Say so before making anything larger (a clone, a vcpkg
+  install root), and remove it when the step is done.
+- **"commit" ends with an empty scratchpad**, before the memory update.
+- **Project data lives in the project folder** (`cmem/`, or `cmem/local/` when private), never only
+  in the assistant's per-project memory folder; a fact found there is copied here and removed there.
