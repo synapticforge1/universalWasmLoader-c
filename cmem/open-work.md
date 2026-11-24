@@ -32,7 +32,8 @@ Summary: what is known to be missing or unproven, each with a stable ID. Closed 
   on 2026-11-20 and the stamp `4a5c3cf668d` became `5ea81976`. loader-js re-stamps first; this repo
   then copies the new `tests/fixtures.json`.
 - **OW11 — the release path changed again (H37) and is unmeasured on GitHub:** `tag` now needs
-  only `validate`; the first real run is the next release.
+  only `validate`; the first real run is the next release. The non-release path is measured: run
+  `45507695426` on `6f1fae4` (2026-11-24), `validate` green with Bun 1.4.5, the other three skipped.
 - **OW12 — tag the header's and the portfile's platform settings** (`win-x64` MinGW block;
   the per-triplet wasmtime selection) with the next release's bump: editing either before then breaks
   the 2.1.1 pins or git-tree that CI checks ([platforms.md](platforms.md)).
